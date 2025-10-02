@@ -482,17 +482,17 @@ const routes = [
       {
         path: '/penawarans/verifikasi',
         name: 'penawarans-verifikasi',
-        component: () => import('@/Pages/PenawaranVerifikasiList.vue'),
+        component: () => import('@/pages/PenawaranVerifikasiList.vue'),
       },
       {
         path: '/penawarans/:id/verifikasi',
         name: 'penawarans-verifikasi-detail',
-        component: () => import('@/Pages/VerifikasiDetail.vue'), // Pastikan path sesuai
+        component: () => import('@/pages/VerifikasiDetail.vue'), // Pastikan path sesuai
       },
       {
         path: '/penawarans/verifikasi/om',
         name: 'penawarans-verifikasi-om',
-        component: () => import('@/Pages/PenawaranVerifikasiListOm.vue'),
+        component: () => import('@/pages/PenawaranVerifikasiListOm.vue'),
       },
       {
         path: '/penawarans/verifikasi/om/:id',
