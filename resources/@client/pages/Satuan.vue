@@ -3,11 +3,12 @@
   <div class="p-6 intro-y">
     <!-- Header & Add -->
     <div class="flex items-center mb-4">
-      <h2 class="text-lg font-medium">Satuan</h2>
-      <Button variant="primary" class="ml-auto" @click="openCreate">
-        Add New Satuan
-      </Button>
-    </div>
+  <h2 class="text-lg font-medium">Master Satuan</h2>
+  <Button variant="primary" class="ml-auto inline-flex items-center gap-2" @click="openCreate">
+    <Lucide icon="Plus" class="w-4 h-4" aria-hidden="true" />
+    <span>Tambah Satuan</span>
+  </Button>
+</div>
 
     <!-- Toolbar -->
     <div class="flex flex-wrap items-center mb-4 intro-y sm:flex-nowrap">
@@ -94,94 +95,177 @@
       </Pagination>
     </div>
 
-    <!-- Create Modal -->
-    <Dialog v-model:open="createModal">
-      <Dialog.Panel class="w-96 p-6">
-        <h3 class="text-lg font-medium mb-4">Add New Satuan</h3>
-        <p v-if="createError" class="text-red-500 mb-2">{{ createError }}</p>
+   <!-- Create Modal -->
+<Dialog v-model:open="createModal">
+  <Dialog.Panel class="w-96 p-6">
+    <h3 class="text-lg font-medium mb-4">Add New Satuan</h3>
+    <p v-if="createError" class="text-red-500 mb-2">{{ createError }}</p>
+
+    <div class="space-y-3">
+      <div>
+        <FormLabel htmlFor="create-nama">Nama Satuan</FormLabel>
         <FormInput
+          id="create-nama"
           v-model="createForm.nama_satuan"
           placeholder="Nama Satuan"
-          class="mb-3"
         />
+      </div>
+
+      <div>
+        <FormLabel htmlFor="create-desc">Deskripsi</FormLabel>
         <FormInput
+          id="create-desc"
           v-model="createForm.deskripsi"
           placeholder="Deskripsi"
-          class="mb-3"
         />
-        <div class="flex items-center mb-4">
-          <FormSelect v-model="createForm.is_active" class="mr-2">
+      </div>
+
+      <div class="flex items-start gap-3">
+        <div class="flex-1">
+          <FormLabel htmlFor="create-status">Status</FormLabel>
+          <FormSelect id="create-status" v-model="createForm.is_active">
             <option :value="true">Active</option>
             <option :value="false">Inactive</option>
           </FormSelect>
+        </div>
+
+        <div class="flex-1">
+          <FormLabel htmlFor="create-by">Created By</FormLabel>
           <FormInput
+            id="create-by"
             v-model="createForm.created_by"
             placeholder="Created By"
             readonly
             class="bg-gray-100 cursor-not-allowed"
           />
         </div>
-        <div class="flex justify-end space-x-2">
-          <Button variant="outline-secondary" @click="createModal = false">Cancel</Button>
-          <Button variant="primary" :loading="createLoading" @click="submitCreate">
-            Create
-          </Button>
-        </div>
-      </Dialog.Panel>
-    </Dialog>
+      </div>
+    </div>
+
+    <div class="flex justify-end space-x-2 mt-5">
+      <Button
+        variant="outline-secondary"
+        @click="createModal = false"
+        class="inline-flex items-center gap-2"
+      >
+        <Lucide icon="X" class="w-4 h-4" aria-hidden="true" />
+        <span>Cancel</span>
+      </Button>
+
+      <Button
+        variant="primary"
+        :loading="createLoading"
+        @click="submitCreate"
+        class="inline-flex items-center gap-2"
+      >
+        <Lucide v-if="!createLoading" icon="PlusCircle" class="w-4 h-4" aria-hidden="true" />
+        <span>Create</span>
+      </Button>
+    </div>
+  </Dialog.Panel>
+</Dialog>
+
 
     <!-- Edit Modal -->
-    <Dialog v-model:open="editModal">
-      <Dialog.Panel class="w-96 p-6">
-        <h3 class="text-lg font-medium mb-4">Edit Satuan</h3>
-        <p v-if="editError" class="text-red-500 mb-2">{{ editError }}</p>
+<Dialog v-model:open="editModal">
+  <Dialog.Panel class="w-96 p-6">
+    <h3 class="text-lg font-medium mb-4">Edit Satuan</h3>
+    <p v-if="editError" class="text-red-500 mb-2">{{ editError }}</p>
+
+    <div class="space-y-3">
+      <div>
+        <FormLabel htmlFor="edit-nama">Nama Satuan</FormLabel>
         <FormInput
+          id="edit-nama"
           v-model="editForm.nama_satuan"
           placeholder="Nama Satuan"
-          class="mb-3"
         />
+      </div>
+
+      <div>
+        <FormLabel htmlFor="edit-desc">Deskripsi</FormLabel>
         <FormInput
+          id="edit-desc"
           v-model="editForm.deskripsi"
           placeholder="Deskripsi"
-          class="mb-3"
         />
-        <div class="flex items-center mb-4">
-          <FormSelect v-model="editForm.is_active" class="mr-2">
+      </div>
+
+      <div class="flex items-start gap-3">
+        <div class="flex-1">
+          <FormLabel htmlFor="edit-status">Status</FormLabel>
+          <FormSelect id="edit-status" v-model="editForm.is_active">
             <option :value="true">Active</option>
             <option :value="false">Inactive</option>
           </FormSelect>
+        </div>
+
+        <div class="flex-1">
+          <FormLabel htmlFor="edit-by">Updated By</FormLabel>
           <FormInput
+            id="edit-by"
             v-model="editForm.lastupdate_by"
             placeholder="Updated By"
             readonly
             class="bg-gray-100 cursor-not-allowed"
           />
         </div>
-        <div class="flex justify-end space-x-2">
-          <Button variant="outline-secondary" @click="editModal = false">Cancel</Button>
-          <Button variant="primary" :loading="editLoading" @click="submitEdit">
-            Save
-          </Button>
-        </div>
-      </Dialog.Panel>
-    </Dialog>
+      </div>
+    </div>
+
+    <div class="flex justify-end space-x-2 mt-5">
+      <Button
+        variant="outline-secondary"
+        @click="editModal = false"
+        class="inline-flex items-center gap-2"
+      >
+        <Lucide icon="X" class="w-4 h-4" aria-hidden="true" />
+        <span>Cancel</span>
+      </Button>
+
+      <Button
+        variant="primary"
+        :loading="editLoading"
+        @click="submitEdit"
+        class="inline-flex items-center gap-2"
+      >
+        <Lucide v-if="!editLoading" icon="Save" class="w-4 h-4" aria-hidden="true" />
+        <span>Save</span>
+      </Button>
+    </div>
+  </Dialog.Panel>
+</Dialog>
+
 
     <!-- Delete Confirmation Modal -->
     <Dialog v-model:open="deleteModal" :initialFocus="deleteButtonRef">
       <Dialog.Panel>
         <div class="p-5 text-center">
           <Lucide icon="XCircle" class="w-16 h-16 mx-auto text-danger" />
-          <div class="mt-5 text-3xl">Are you sure?</div>
-          <div class="mt-2 text-slate-500">This cannot be undone.</div>
+          <div class="mt-5 text-3xl">Apakah Anda Yakin?</div>
+          <div class="mt-2 text-slate-500">Data Tidak Bisa Dikembalikan</div>
         </div>
         <div class="px-5 pb-8 text-center">
-          <Button variant="outline-secondary" class="w-24 mr-1" @click="deleteModal = false">
-            Cancel
-          </Button>
-          <Button variant="danger" ref="deleteButtonRef" class="w-24" @click="submitDelete">
-            Delete
-          </Button>
-        </div>
+  <Button
+    variant="outline-secondary"
+    class="w-24 mr-1 inline-flex items-center justify-center gap-2"
+    @click="deleteModal = false"
+  >
+    <Lucide icon="X" class="w-4 h-4" aria-hidden="true" />
+    <span>Cancel</span>
+  </Button>
+
+  <Button
+    variant="danger"
+    ref="deleteButtonRef"
+    class="w-24 inline-flex items-center justify-center gap-2"
+    @click="submitDelete"
+  >
+    <Lucide icon="Trash2" class="w-4 h-4" aria-hidden="true" />
+    <span>Delete</span>
+  </Button>
+</div>
+
       </Dialog.Panel>
     </Dialog>
   </div>

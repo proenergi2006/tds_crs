@@ -190,15 +190,18 @@ async function fetchData(page = 1) {
 }
 
 /** Buka PDF di tab baru */
-function preview(id: number) {
-  axios.get(`/api/vendor-pos/${id}/preview`, { responseType: 'blob' })
-    .then(resp => {
-      const blob = new Blob([resp.data], { type: 'application/pdf' })
-      const url  = URL.createObjectURL(blob)
-      window.open(url, '_blank')
-      setTimeout(() => URL.revokeObjectURL(url), 10000)
-    })
-    .catch(() => Swal.fire('Error','Gagal membuka PDF','error'))
+async function preview(id: number) {
+  try {
+    const response = await axios.get(`/vendor-pos/${id}/preview`, {
+      responseType: 'blob'
+    });
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url  = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  } catch {
+    Swal.fire('Error','Gagal membuka PDF','error');
+  }
 }
 
 function goReceiveItem(idPo: number) {

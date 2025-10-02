@@ -27,6 +27,24 @@ class KabupatenController extends Controller
     return response()->json($q->paginate($perPage));
     }
 
+    public function publicIndex(Request $request)
+    {
+        $q = Kabupaten::query();
+
+        if ($provId = $request->query('provinsi_id')) {
+            $q->where('id_provinsi', $provId);
+        }
+        if ($s = trim((string) $request->query('q', ''))) {
+            $q->whereRaw('LOWER(nama_kabupaten) LIKE ?', ['%'.strtolower($s).'%']);
+        }
+
+        $rows = $q->orderBy('nama_kabupaten')
+                  ->limit(500)
+                  ->get(['id_kabupaten as id', 'nama_kabupaten as name', 'id_provinsi']);
+
+        return response()->json(['data' => $rows]);
+    }
+
     /**
      * Simpan kabupaten baru.
      */

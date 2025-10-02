@@ -18,5 +18,12 @@ class Vendor extends Model
         'created_by',
         'lastupdate_time',
         'lastupdate_by',
+
+        // Dokumen
+        'npwp_number','npwp_file',
+        'nib_number','nib_file',
+        'sppkp_number','sppkp_file',
+        'bank_account_letter_file',
+        'company_profile_file',
     ];
 }

@@ -1,6 +1,8 @@
 import { type Menu } from "@/stores/menu";
 import { useAuthStore } from '@/stores/auth'
 
+
+
 const menu: Array<Menu | "divider"> = [
   
     {
@@ -17,22 +19,7 @@ const menu: Array<Menu | "divider"> = [
       {
         icon: "Activity",
         pageName: "dashboard-overview-1",
-        title: "Overview 1",
-      },
-      {
-        icon: "Activity",
-        pageName: "dashboard-overview-2",
-        title: "Overview 2",
-      },
-      {
-        icon: "Activity",
-        pageName: "dashboard-overview-3",
-        title: "Overview 3",
-      },
-      {
-        icon: "Activity",
-        pageName: "dashboard-overview-4",
-        title: "Overview 4",
+        title: "Dashboard Utama",
       },
     ],
   },
@@ -67,13 +54,19 @@ const menu: Array<Menu | "divider"> = [
       },
       {
         icon: "CheckSquare",
-        pageName: "po-verification-detail",
-        title: "Detail Verifikasi PO",
+        pageName: "penawarans-verifikasi-om",
+        title: "Verifikasi Penawaran",
       },
+      // {
+      //   icon: "CheckSquare",
+      //   pageName: "po-verification-detail",
+      //   title: "Detail Verifikasi PO",
+      // },
      
     ],
   },
 
+  
   
 
   {
@@ -91,6 +84,94 @@ const menu: Array<Menu | "divider"> = [
         pageName: "penawarans-list",
         title: "penawaran",
       },
+      {
+        icon: 'MapPin',
+        pageName: 'lcr-list',
+        title: 'LCR',
+      },
+      {
+        icon: 'File',
+        pageName: 'customer-verifications',
+        title: 'Generate Link',
+      },
+      {
+        icon: 'File',
+        pageName: 'review-customer',
+        title: 'Review Data Customer',
+      },
+    
+     
+     
+      
+    ],
+  },
+
+  {
+    icon: "File",
+    pageName: "po-customers-index",
+    title: "PO Customer",
+  },
+
+  {
+    icon: 'File',
+    pageName: 'review-data-customer-admin',
+    title: 'Review Data Customer Admin',
+  },
+  {
+    icon: 'File',
+    pageName: 'review-data-customer-logistik',
+    title: 'Review Data Customer Logistik',
+  },
+ 
+  {
+    icon: 'File',
+    pageName: 'verify-data-customer-om',
+    title: 'Review Data Customer OM',
+  },
+
+  {
+    icon: 'CheckCircle',
+    pageName: 'sales-confirmations',
+    title: 'Sales Confirmation',
+  },
+
+ 
+
+  {
+    icon: "CheckCircle",
+    pageName: "verifikasi",
+    title: "Verifikasi BM",
+    subMenu: [
+      {
+        icon: "File",
+        pageName: "penawarans-verifikasi",
+        title: "penawaran",
+      },
+    ],
+  },
+
+  {
+    icon: 'File',
+    pageName: 'verify-data-customer-bm',
+    title: 'Review Customer BM',
+  },
+
+  {
+    icon: 'ClipboardCheck',
+    pageName: 'sales-confirmations-bm',
+    title: 'Sales Confirmation (BM)',
+  },
+
+  {
+    icon: "CheckCircle",
+    pageName: "verifikasi",
+    title: "Verifikasi-om",
+    subMenu: [
+      {
+        icon: "File",
+        pageName: "penawarans-verifikasi-om",
+        title: "penawaran",
+      },
     ],
   },
 
@@ -103,6 +184,11 @@ const menu: Array<Menu | "divider"> = [
         icon: "Inbox",
         pageName: "vendor-pos-list",
         title: "PO Supplier",
+      },
+      {
+        icon: "ClipboardList",
+        pageName: "procurement-delivery-requests", // <- sama dgn name router
+        title: "Delivery Request",
       },
     ],
   },
@@ -147,12 +233,12 @@ const menu: Array<Menu | "divider"> = [
   {
     icon: "Database",
     pageName: "Refrensi-Data",
-    title: "Refrensi-Data",
+    title: "Refrensi Data",
     subMenu: [
       {
         icon: "Building",
         pageName: "cabang",
-        title: "Cabangs",
+        title: "Cabang",
       },
       
       // {
@@ -170,22 +256,22 @@ const menu: Array<Menu | "divider"> = [
       {
         icon: "Archive",
         pageName: "products",
-        title: "Products",
+        title: "Master Produk",
         subMenu: [
           {
-            icon: "Package",
+            icon: "FileText",
             pageName: "produks-list",
-            title: "Produks List",
+            title: "Produk",
           },
           {
             icon: "FileText",
             pageName: "satuan",
-            title: "Satuans",
+            title: "Satuan",
           },
           {
             icon: "FileText",
             pageName: "ukuran",
-            title: "Ukurans",
+            title: "Ukuran",
           },
           {
             icon: "FileText",
@@ -272,9 +358,36 @@ const menu: Array<Menu | "divider"> = [
         pageName: 'ongkos-kapal-list',
         title: 'OA Kapal'
       },
+      {
+        icon: 'Truck',
+        pageName: 'trucks-list',
+        title: 'Master Truck',
+      },
+      {
+        icon: 'Truck',
+        pageName: 'oa-trucks-list',
+        title: 'OA Truck'
+      }
+      
       
     ],
+
+    
   },
+
+  {
+    icon: 'MapPin',
+    pageName: 'logistik-lcrs',
+    title: 'Verifikasi LCR - Logistik',
+  },
+
+      {
+        icon: "ClipboardList",
+        pageName: "logistics-delivery-plan", // harus sama dengan name route LIST
+        title: "Delivery Plan"
+      },
+    
+   
   
   
 

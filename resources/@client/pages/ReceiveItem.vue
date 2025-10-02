@@ -2,12 +2,15 @@
   <div class="p-6 bg-slate-100 min-h-screen">
     <!-- Header & PO Info -->
     <div class="max-w-4xl mx-auto space-y-6">
-      <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-semibold text-slate-700">Receive Item</h1>
-        <Button variant="primary" @click="openModal">
-          <Lucide icon="Plus" class="w-4 h-4 mr-1" /> Add Receive
-        </Button>
-      </div>
+      <!-- Header -->
+<div class="flex items-center justify-between">
+  <h1 class="text-2xl font-semibold text-slate-700">Receive Item</h1>
+
+  <!-- tombol hanya muncul kalau masih ada selisih -->
+  <Button v-if="canAddReceive" variant="primary" @click="openModal">
+    <Lucide icon="Plus" class="w-4 h-4 mr-1" /> Add Receive
+  </Button>
+</div>
 
       <!-- PO Info Card -->
       <div class="bg-white shadow-lg rounded-lg p-6 grid grid-cols-2 gap-4">
@@ -286,7 +289,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import axios from 'axios'
 import Swal from 'sweetalert2'
 import { useRoute } from 'vue-router'
@@ -367,6 +370,25 @@ function onNumberInput(
   const num = parseInt(raw, 10)
   form.details[idProduk][field] = isNaN(num) ? '' : num.toLocaleString('id-ID')
 }
+
+
+const latestReceive = computed(() => {
+  if (!Array.isArray(receives.value) || receives.value.length === 0) return null
+  // clone + sort ascending; ambil yang terakhir
+  const sorted = [...receives.value].sort((a: any, b: any) => {
+    const da = new Date(a.received_at || a.created_at || 0).getTime()
+    const db = new Date(b.received_at || b.created_at || 0).getTime()
+    return da - db
+  })
+  return sorted[sorted.length - 1]
+})
+
+const canAddReceive = computed(() => {
+  const last = latestReceive.value
+  if (!last || !Array.isArray(last.details)) return true        // belum ada receive → boleh tambah
+  // kalau ada minimal satu detail yang selisih != 0 → masih boleh tambah
+  return last.details.some((d: any) => Number(d.selisih ?? 0) !== 0)
+})
 
 // Hitung selisih: (Volume Terima − Volume PO)
 function computeSelisih(item: any): number {

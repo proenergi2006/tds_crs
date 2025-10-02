@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\VendorPo;
+use App\Models\Cabang;
+use App\Models\Terminal;
 use Illuminate\Http\Request;
 use PDF;
 // **Tambahkan ini:**
@@ -25,38 +27,86 @@ class VendorPoController extends Controller
     }
 
     public function store(Request $request)
+{
+    // Ambil id_cabang berdasarkan id_terminal (dari terminal)
+    $terminal = Terminal::find($request->id_terminal);
+    $cabang = Cabang::find($terminal->id_cabang);
+
+    // Ambil nomor PO terakhir dari tabel cabangs
+    $lastNoPo = $cabang->urut_po;
+
+    // Increment nomor urut (no_po)
+    $newNoPo = (int)$lastNoPo + 1;
+
+    // Mendapatkan bulan Romawi (misal: VIII untuk Agustus)
+    $bulanRomawi = $this->getBulanRomawi(date('m')); 
+
+    // Tahun (2 digit terakhir)
+    $tahun = substr(date('Y'), -2);
+
+    // Format nomor PO baru
+    $nomorPo = str_pad($newNoPo, 3, '0', STR_PAD_LEFT)  . '/' . $terminal->inisial. '/' . $cabang->inisial_cabang. '/'  . $bulanRomawi . '/' . $tahun;
+
+    // Menyimpan data Vendor PO
+    $data = [
+        'id_vendor' => $request->id_vendor,
+        'id_terminal' => $request->id_terminal,
+        'nomor_po' => $nomorPo,
+        'tanggal_inven' => $request->tanggal_inven,
+        'kd_tax' => $request->kd_tax,
+        'terms' => $request->terms,
+        'terms_day' => $request->terms_day,
+        'subtotal' => $request->subtotal,
+        'ppn11' => $request->ppn11,
+        'total_order' => $request->total_order,
+        'keterangan' => $request->keterangan,
+        'terms_condition' => $request->terms_condition,
+        'created_by' => $request->user()->name,
+    ];
+
+    // Simpan Vendor PO
+    $vendorPo = VendorPo::create($data);
+
+    // Update no_po di tabel cabangs
+    $cabang->urut_po = $newNoPo;
+    $cabang->save();
+
+    return response()->json($vendorPo, 201);
+}
+    
+    // Fungsi untuk mengubah bulan angka menjadi bulan Romawi
+    private function getBulanRomawi($month)
     {
-        $data = $request->validate([
-            'id_vendor'     => 'required|exists:vendors,id_vendor',
-            'id_terminal'   => 'required|exists:terminals,id_terminal',
-            'nomor_po'      => 'required|string|max:255',
-            'tanggal_inven' => 'required|date',
-            'kd_tax'        => 'required|string|max:10',
-            'terms'         => 'required|string|max:10',
-            'terms_day'     => 'required|integer',
-            'subtotal'      => 'required|numeric',
-            'ppn11'         => 'required|numeric',
-            'total_order'   => 'required|numeric',
-            'keterangan'    => 'nullable|string',
-            'terms_condition'    => 'nullable|string',
-            'disposisi_po'  => 'nullable|integer',
-        ]);
-
-        $data['created_time'] = now();
-        $data['created_by']   = $request->user()->name;
-
-        $po = VendorPo::create($data);
-
-        return response()->json($po, 201);
+        $months = [
+            '01' => 'I', '02' => 'II', '03' => 'III', '04' => 'IV', 
+            '05' => 'V', '06' => 'VI', '07' => 'VII', '08' => 'VIII', 
+            '09' => 'IX', '10' => 'X', '11' => 'XI', '12' => 'XII'
+        ];
+        return $months[$month] ?? 'I'; // Default to 'I' if not found
     }
 
     public function show($id)
     {
         $po = VendorPo::with(['vendor', 'terminal', 'produks.produk', 'produks.produk.ukuran.satuan', 'produks.produk.jenis'])
                       ->findOrFail($id);
-
+    
+        // Format nomor_po jika diperlukan
+       // $po->nomor_po = $this->generateNomorPO($po);
+    
         return response()->json($po);
     }
+
+    private function generateNomorPO($po)
+{
+    // Example format: 001/SADP/SLW/IX/25
+    $terminal = $po->terminal;
+    $cabang = $po->cabang;
+
+    // Format: 001/SADP/SLW/IX/25
+    $bulanRomawi = $this->getBulanRomawi(now()->month);  // Convert month to Roman numeral
+    $tahun = now()->year % 100;  // Get last 2 digits of the current year
+    return sprintf("%03d/%s/%s/%s/%02d", $cabang->urut_po, $terminal->inisial_terminal, $cabang->inisial_cabang, $bulanRomawi, $tahun);
+}
 
     public function update(Request $request, $id)
     {
@@ -96,17 +146,25 @@ class VendorPoController extends Controller
     return response()->json($po);
 }
 
+
 public function preview($id)
 {
-    $po = VendorPo::with(['vendor','terminal','produks.produk'])->findOrFail($id);
+    $po = VendorPo::with(['vendor','terminal','produks.produk','produks.produk.ukuran.satuan', 'produks.produk.jenis'])->findOrFail($id);
 
+    // ambil dari public/images
+    $leftPath  = public_path('images/tds.png');
+    $rightPath = public_path('images/logo_prodiesel.png');
 
-    // Render PDF
-    $pdf = PDF::loadView('vendorpos.preview', compact('po'))
-              ->setOptions(['isRemoteEnabled' => true])
-              ->setPaper('a4', 'portrait');
+    // ubah ke data URI (base64) — tahan banting untuk Dompdf
+    $logoLeft  = file_exists($leftPath)  ? 'data:image/png;base64,'.base64_encode(file_get_contents($leftPath))  : null;
+    $logoRight = file_exists($rightPath) ? 'data:image/png;base64,'.base64_encode(file_get_contents($rightPath)) : null;
 
-    return $pdf->stream("PO-{$po->nomor_po}.pdf");
+    return Pdf::loadView('vendorpos.preview', compact('po','logoLeft','logoRight'))
+        ->setPaper('a4','portrait')
+        ->setOptions([
+            'chroot'          => public_path(), // aman
+            'isRemoteEnabled' => true,
+        ])->stream("PO.pdf");
 }
 
 /**

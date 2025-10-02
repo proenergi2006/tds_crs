@@ -2,15 +2,17 @@
 <template>
   <div class="p-6 intro-y">
     <!-- Header & Add New -->
-    <div class="flex items-center">
-      <h2 class="text-lg font-medium">Basic Price</h2>
-      <RouterLink
-        :to="{ name: 'produk-hargas-create' }"
-        class="ml-auto"
-      >
-        <Button variant="primary">Add New Price</Button>
-      </RouterLink>
-    </div>
+   <!-- Header & Add New -->
+<div class="flex items-center">
+  <h2 class="text-lg font-medium">Master Harga Produk</h2>
+
+  <RouterLink :to="{ name: 'produk-hargas-create' }" class="ml-auto">
+    <Button variant="primary" class="inline-flex items-center gap-2">
+      <Lucide icon="Plus" class="w-4 h-4" aria-hidden="true" />
+      <span>Tambah Harga</span>
+    </Button>
+  </RouterLink>
+</div>
 
     <!-- Toolbar -->
     <div class="flex flex-wrap items-center mt-5 intro-y sm:flex-nowrap space-x-4">
@@ -62,7 +64,7 @@
             <th class="px-4 py-2 text-xs font-medium text-left uppercase">Cabang</th>
             <th class="px-4 py-2 text-xs font-medium text-left uppercase">Produk</th>
             <th class="px-4 py-2 text-xs font-medium text-center uppercase">Price List</th>
-            <th class="px-4 py-2 text-xs font-medium text-center uppercase">BM</th>
+            <th class="px-4 py-2 text-xs font-medium text-center uppercase">Harga BM</th>
             <th class="px-4 py-2 text-xs font-medium text-left uppercase">Catatan</th>
             <th class="px-4 py-2 text-xs font-medium text-center uppercase">Actions</th>
           </tr>

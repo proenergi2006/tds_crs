@@ -3,6 +3,7 @@ import { ref, reactive, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import Swal from 'sweetalert2'
+import Lucide from '@/components/Base/Lucide'
 
 import Button from '@/components/Base/Button'
 import { FormInput, FormSelect, FormLabel, FormSwitch } from '@/components/Base/Form'
@@ -86,28 +87,28 @@ function cancel() {
     <div class="intro-y grid grid-cols-12 gap-6 mt-8">
       <div class="col-span-12">
         <div class="p-5 box">
-          <h2 class="text-lg font-medium mb-4">Add Produk</h2>
+          <h2 class="text-lg font-medium mb-4">Tambah Produk</h2>
 
           <p v-if="error" class="text-red-500 mb-3">{{ error }}</p>
 
           <div class="space-y-4">
             <div>
-              <FormLabel htmlFor="nama">Nama Produk</FormLabel>
+              <FormLabel htmlFor="nama">Nama Produk *</FormLabel>
               <FormInput id="nama" v-model="form.nama_produk" placeholder="Masukkan nama produk" />
             </div>
 
             <div>
-              <FormLabel htmlFor="merk">Merek Dagang</FormLabel>
-              <FormInput id="merk" v-model="form.merk_dagang" placeholder="Masukkan merek dagang (opsional)" />
+              <FormLabel htmlFor="merk">Merek Dagang *</FormLabel>
+              <FormInput id="merk" v-model="form.merk_dagang" placeholder="Masukkan merek dagang " />
             </div>
 
             <div>
               <FormLabel htmlFor="desc">Deskripsi</FormLabel>
-              <FormInput id="desc" v-model="form.deskripsi" placeholder="Deskripsi produk" />
+              <FormInput id="desc" v-model="form.deskripsi" placeholder="Deskripsi produk (opsional)" />
             </div>
 
             <div>
-              <FormLabel htmlFor="ukuran">Ukuran</FormLabel>
+              <FormLabel htmlFor="ukuran">Ukuran *</FormLabel>
               <FormSelect id="ukuran" v-model="form.id_ukuran">
                 <option disabled value="">-- Pilih Ukuran --</option>
                 <option v-for="u in sizes" :key="u.id_ukuran" :value="u.id_ukuran">
@@ -117,7 +118,7 @@ function cancel() {
             </div>
 
             <div>
-              <FormLabel htmlFor="jenis">Jenis Produk</FormLabel>
+              <FormLabel htmlFor="jenis">Jenis Produk *</FormLabel>
               <FormSelect id="jenis" v-model="form.id_jenis">
                 <option disabled value="">-- Pilih Jenis Produk --</option>
                 <option v-for="j in jenisList" :key="j.id_jenis" :value="j.id_jenis">
@@ -140,9 +141,16 @@ function cancel() {
           </div>
 
           <div class="mt-6 flex justify-end space-x-2">
-            <Button variant="outline-secondary" @click="cancel">Cancel</Button>
-            <Button variant="primary" :loading="loading" @click="submit">Save</Button>
-          </div>
+  <Button variant="outline-secondary" @click="cancel" class="inline-flex items-center gap-2">
+    <Lucide v-if="!loading" icon="X" class="w-4 h-4" aria-hidden="true" />
+    <span>Batal</span>
+  </Button>
+
+  <Button variant="primary" :loading="loading" @click="submit" class="inline-flex items-center gap-2">
+    <Lucide v-if="!loading" icon="Save" class="w-4 h-4" aria-hidden="true" />
+    <span>Simpan</span>
+  </Button>
+</div>
         </div>
       </div>
     </div>

@@ -82,12 +82,12 @@ async function onSubmit() {
             <span class="ml-3 text-lg text-white">Tri Daya Selaras</span>
           </a>
           <div class="my-auto">
-            <img class="w-1/2 -mt-16 -intro-x" :src="illustrationUrl" alt="Illust"/>
-            <div class="mt-10 text-4xl font-medium leading-tight text-white -intro-x">
+            <img class="w-1/2 -mt-16 -intro-x" :src="logoUrl" alt="Illust"/>
+            <!-- <div class="mt-10 text-4xl font-medium leading-tight text-white -intro-x">
               sign in to your account.
-            </div>
+            </div> -->
             <div class="mt-5 text-lg text-white -intro-x text-opacity-70 dark:text-slate-400">
-              Operational application for sales of stones & lubricants
+              Operational application for sales of stones 
             </div>
           </div>
         </div>
@@ -100,7 +100,7 @@ async function onSubmit() {
                    sm:w-3/4 lg:w-2/4 xl:w-auto"
           >
             <h2 class="text-2xl font-bold text-center intro-x xl:text-3xl xl:text-left">
-              Log In
+              Sign In
             </h2>
 
             <p v-if="errorMsg" class="text-red-500 mt-2 text-center">{{ errorMsg }}</p>
@@ -136,12 +136,12 @@ async function onSubmit() {
                   </label>
                 </div>
                 <!-- SPA navigation ke halaman forgot-password -->
-                <RouterLink
+                <!-- <RouterLink
                   :to="{ name: 'forgot-password' }"
                   class="text-primary hover:underline"
                 >
                   Forgot Password?
-                </RouterLink>
+                </RouterLink> -->
               </div>
 
               <div class="mt-5 text-center intro-x xl:mt-8 xl:text-left">

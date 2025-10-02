@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
+import { startRouteLoading, stopRouteLoading } from '@/utils/routeLoading'
+
 const routes = [
   { path: '/', redirect: '/login' },
   {
@@ -443,6 +445,242 @@ const routes = [
         component: () => import('@/pages/OngkosKapalForm.vue'),
         props: true,
       },
+      {
+        path: '/trucks',
+        name: 'trucks-list',
+        component: () => import('@/pages/TruckList.vue'),
+      },
+      {
+        path: '/trucks/create',
+        name: 'trucks-create',
+        component: () => import('@/pages/TruckForm.vue'),
+      },
+      {
+        path: '/trucks/:id/edit',
+        name: 'trucks-edit',
+        component: () => import('@/pages/TruckForm.vue'),
+        props: true,
+      },
+      {
+        path: '/oa-trucks',
+        name: 'oa-trucks-list',
+        component: () => import('@/pages/OaTruckList.vue'),
+        props: true,
+      },
+      {
+        path: '/oa-trucks/create',
+        name: 'oa-trucks-create',
+        component: () => import('@/pages/OaTruckForm.vue'),
+        props: true,
+      },
+      {
+        path: '/oa-trucks/:id/edit',
+        name: 'oa-trucks-edit',
+        component: () => import('@/pages/OaTruckForm.vue'),
+        props: true,
+      },
+      {
+        path: '/penawarans/verifikasi',
+        name: 'penawarans-verifikasi',
+        component: () => import('@/Pages/PenawaranVerifikasiList.vue'),
+      },
+      {
+        path: '/penawarans/:id/verifikasi',
+        name: 'penawarans-verifikasi-detail',
+        component: () => import('@/Pages/VerifikasiDetail.vue'), // Pastikan path sesuai
+      },
+      {
+        path: '/penawarans/verifikasi/om',
+        name: 'penawarans-verifikasi-om',
+        component: () => import('@/Pages/PenawaranVerifikasiListOm.vue'),
+      },
+      {
+        path: '/penawarans/verifikasi/om/:id',
+        name: 'penawarans-verifikasi-om-detail',
+        component: () => import('@/pages/VerifikasiOmDetail.vue'),
+      
+      },
+      {
+        path: '/po-customer/create',
+        name: 'penawarans-po',
+        component: () => import('@/pages/PenawaranCustomerPO.vue'),
+      },
+
+      {
+        path: '/po-customer/create',
+        name: 'penawarans-po',
+        component: () => import('@/pages/PenawaranCustomerPO.vue'),
+      },
+
+      {
+        path: '/po-customers',
+        name: 'po-customers-index',
+        component: () => import('@/pages/PoCustomersIndex.vue'),
+      },
+
+      {
+        path: 'customer-lcrs',
+        name: 'lcr-list',
+        
+        component: () => import('@/pages/CustomerLcrList.vue'),
+      },
+      {
+        path: 'customer-lcrs/create',
+        name: 'lcr-create',
+        component: () => import('@/pages/CustomerLcrForm.vue'),
+      },
+      {
+        path: 'customer-lcrs/:id/edit',
+        name: 'lcr-edit',
+        component: () => import('@/pages/CustomerLcrForm.vue'),
+      },
+
+      {
+        path: '/logistik/lcrs',
+        name: 'logistik-lcrs',
+        component: () => import('@/pages/LogistikLcrList.vue'),
+      },
+      {
+        path: '/logistik/lcrs/:id',
+        name: 'logistik-lcr-detail',
+        component: () => import('@/pages/LogistikLcrDetail.vue'),
+        props: true,
+      },
+      {
+        path: '/customer-verifications',
+        name: 'customer-verifications',
+        component: () => import('@/pages/CustomerVerificationList.vue'), // komponen list yg tadi
+      },
+      {
+        path: '/link-customers',
+        name: 'link-customers',
+        component: () => import('@/pages/ListLinkCustomer.vue'),
+      },
+      { path: '/verify/:token', 
+        name: 'verify-customer', 
+        component: () => import('@/pages/CustomerUpdateForm.vue') 
+      },
+      {
+        path: '/review-customer',
+        name: 'review-customer',
+        component: () => import('@/pages/CustomerReviewList.vue') 
+      },
+      {
+        path: '/review-data-customer',
+        name: 'review-data-customer',
+        component: () => import('@/pages/ReviewDataCustomer.vue'),
+        // bawa state tab/search/paging lewat query
+      },
+
+      {
+        path: '/review-data-customer/:id',
+        name: 'review-customer-detail',
+        component: () => import('@/pages/ReviewCustomerDetail.vue'),
+        props: true,
+      },
+      {
+        path: '/admin/review-data-customer',
+        name: 'review-data-customer-admin',
+        component: () => import('@/pages/ReviewDataCustomerAdmin.vue'),
+      },
+      {
+        path: '/review/logistik',
+        name: 'review-data-customer-logistik',
+        component: () => import('@/pages/ReviewDataCustomerLogistik.vue'),
+      },
+      {
+        path: '/review/logistik/:id',
+        name: 'review-customer-detail-logistik',
+        component: () => import('@/pages//LogistikCustomerDetail.vue'),
+      },
+       { 
+         path: '/review/bm',
+         name: 'verify-data-customer-bm', 
+         component: () => import('@/pages/VerifyDataCustomerBM.vue') 
+        },
+
+        { 
+          path: '/review/bm/:id', 
+          name: 'bm-customer-detail', 
+          props: true, 
+          component: () => import('@/pages/BMCustomerDetail.vue') 
+        },
+
+        // OM (list antrean + detail)
+{ 
+  path: '/review/om', 
+  name: 'verify-data-customer-om',
+  component: () => import('@/pages/VerifyDataCustomerOM.vue')
+ },
+{ 
+  path: '/review/om/:id', 
+  name: 'om-customer-detail',
+  props: true, 
+  component: () => import('@/pages/OMCustomerDetail.vue')
+ },
+
+ {
+  path: '/sales-confirmations',
+  name: 'sales-confirmations',
+  component: () => import('@/pages/SalesConfirmationIndex.vue')
+  
+},
+{
+  path: '/sales-confirmations/:id',
+  name: 'sales-confirmations-detail',
+  component: () => import('@/pages/SalesConfirmationDetail.vue')
+},
+{
+  path: '/sales-confirmations/bm',
+  name: 'sales-confirmations-bm',
+  component: () => import('@/pages/SalesConfirmationBM.vue')
+},
+{
+  path: '/sales-confirmations/bm/:id',
+  name: 'sales-confirmations-bm-detail',
+  component: () => import('@/pages/SalesConfirmationBMDetail.vue')
+},
+
+{
+  path: '/sales-confirmations/bm/:id',
+  name: 'sales-confirmations-bm-detail-po',
+  component: () => import('@/pages/SalesConfirmationBMDetailClassic.vue'),
+  props: true,
+},
+
+{
+  path: '/po-customer-plan/:id',
+  name: 'po-customer-plan',
+  component: () => import('@/pages/PoCustomerPlan.vue'),
+  props: true,
+},
+
+{
+  path: '/logistics/delivery-plan',
+  name: 'logistics-delivery-plan',
+  component: () => import('@/pages/DeliveryPlanList.vue'),
+  meta: { title: 'Delivery Plan' },
+},
+
+{
+  path: '/procurement/delivery-requests',
+  name: 'procurement-delivery-requests',
+  component: () => import('@/pages/DeliveryRequestList.vue'),
+  meta: { title: 'Delivery Request' }, // opsional role guard juga bisa ditambah
+},
+{
+  path: '/procurement/delivery-requests/:id',
+  name: 'procurement-dr-detail',
+  component: () => import('@/pages/DeliveryRequestDetail.vue'),
+  props: true,
+}
+
+
+
+
+
+
+      
       
       // {
       //   path: '/po-verification/:id',
@@ -466,27 +704,40 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
+  startRouteLoading()
+
   const token = localStorage.getItem('access_token')
   const auth  = useAuthStore()
 
-  // 1) jika ada token tapi user belum terisi, fetch dulu
+  // Isi user kalau ada token tapi state kosong
   if (token && !auth.user) {
-    await auth.fetchUser()
+    try { await auth.fetchUser() } catch (e) { /* optional: handle */ }
   }
 
-  // 2) jika belum login, redirect ke login
+  // Belum login → redirect ke login
   if (!token && to.name !== 'login' && to.name !== 'two-factor') {
+    // stop lebih cepat saat redirect agar tidak menggantung
+    stopRouteLoading(150)
     return next({ name: 'login', query: { logged_out: '1' } })
   }
 
-  // 3) kalau route punya meta.roles, cek apakah id_role user termasuk
+  // Cek role
   const allowedRoles = (to.meta.roles as number[] | undefined)
-  if (allowedRoles && !allowedRoles.includes(auth.user?.id_role!)) {
-    // misal redirect ke dashboard atau halaman “Unauthorized”
+  if (allowedRoles && !allowedRoles.includes(auth.user?.id_role ?? -1)) {
+    stopRouteLoading(150)
     return next({ name: 'dashboard-overview-1' })
   }
 
   next()
+})
+
+// Route selesai → matikan dengan min visible 250ms
+router.afterEach(() => {
+  stopRouteLoading(250)
+})
+
+router.onError(() => {
+  stopRouteLoading(150)
 })
 
 export default router

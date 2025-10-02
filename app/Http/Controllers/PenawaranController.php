@@ -4,200 +4,121 @@ namespace App\Http\Controllers;
 
 use App\Models\Penawaran;
 use App\Models\PenawaranItem;
+use App\Models\Cabang;
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
+use App\Mail\PenawaranSubmittedMail;            // notifikasi ke BM saat diajukan
+use App\Mail\PenawaranNeedOmApprovalMail;       // notifikasi ke OM saat approved BM
+use App\Mail\PenawaranRejectedMail;             // notifikasi ke pembuat saat ditolak (BM/OM)
 use PDF;
 
 class PenawaranController extends Controller
 {
-    /**
-     * GET /api/penawarans
-     * Menampilkan list penawaran (dengan pagination).
-     */
+    /** GET /api/penawarans */
     public function index(Request $request)
     {
         $perPage = $request->query('per_page', 10);
         $search  = $request->query('search');
 
-        $query = Penawaran::with(['customer', 'cabang', 'items.produk']);
+        $query = Penawaran::with(['customer', 'cabang', 'items.produk'])
+            ->withSum('items as total_volume', 'volume_order');
 
         if ($search) {
-            $query->where('nomor_penawaran', 'like', "%{$search}%")
+            $query->where(function ($q) use ($search) {
+                $q->where('nomor_penawaran', 'like', "%{$search}%")
                   ->orWhere('kepada', 'like', "%{$search}%")
                   ->orWhere('nama', 'like', "%{$search}%");
+            });
         }
 
-        $data = $query->orderBy('created_at', 'desc')
-                      ->paginate($perPage);
-
+        $data = $query->orderBy('created_at', 'desc')->paginate($perPage);
         return response()->json($data);
     }
 
+    /** GET /api/penawarans/bm */
+    public function indexForBranchManager(Request $request)
+    {
+        $perPage = $request->query('per_page', 10);
+        $search  = $request->query('search');
+
+        $query = Penawaran::with(['customer', 'cabang', 'items.produk'])
+            ->whereIn('disposisi_penawaran', [1, 2, 3, 4, 5, 6]);
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nomor_penawaran', 'like', "%{$search}%")
+                  ->orWhere('kepada', 'like', "%{$search}%")
+                  ->orWhere('nama', 'like', "%{$search}%");
+            });
+        }
+
+        $data = $query->orderBy('created_at', 'desc')->paginate($perPage);
+        return response()->json($data);
+    }
+
+    /** GET /api/penawarans/{id}/preview */
     public function previewPdf($id)
     {
-        // Ambil data penawaran beserta relasi yang dibutuhkan
         $penawaran = Penawaran::with(['customer', 'cabang', 'items.produk.ukuran'])
             ->findOrFail($id);
 
-        // Opsional: ambil data profil perusahaan (logo, nama, alamat)
         $company = [
             'nama_perusahaan' => config('app.name'),
             'alamat'          => 'Alamat Perusahaan Anda',
             'telepon'         => '021-xxxxxxx',
             'fax'             => '021-xxxxxxx',
-            'logo_path'       => null, // misal 'logo.png' di storage/app/public
+            'logo_path'       => null,
         ];
 
-        // Lakukan render view PDF
-        $pdf = PDF::loadView('penawaran.pdf', compact('penawaran', 'company'));
-        
-        // Atur ukuran kertas (misal A4, portrait)
-        $pdf->setPaper('a4', 'portrait');
+        $pdf = PDF::loadView('penawaran.pdf', compact('penawaran', 'company'))
+            ->setPaper('A4', 'portrait');
 
-        // Langsung stream ke browser (inline)
-        return $pdf->stream("Quotation-{$penawaran->nomor_penawaran}.pdf");
+        $safeNomor = str_replace(['/', '\\'], '-', $penawaran->nomor_penawaran);
+        return $pdf->stream("Quotation-{$safeNomor}.pdf");
     }
 
+    /** GET /api/penawarans/{id}/preview-lub */
     public function previewPdflub($id)
     {
-        // Ambil data penawaran beserta relasi yang dibutuhkan
         $penawaran = Penawaran::with(['customer', 'cabang', 'items.produk.ukuran'])
             ->findOrFail($id);
 
-        // Opsional: ambil data profil perusahaan (logo, nama, alamat)
         $company = [
             'nama_perusahaan' => config('app.name'),
             'alamat'          => 'Alamat Perusahaan Anda',
             'telepon'         => '021-xxxxxxx',
             'fax'             => '021-xxxxxxx',
-            'logo_path'       => null, // misal 'logo.png' di storage/app/public
+            'logo_path'       => null,
         ];
 
-        // Lakukan render view PDF
-        $pdf = PDF::loadView('penawaran.pdflub', compact('penawaran', 'company'));
-        
-        // Atur ukuran kertas (misal A4, portrait)
-        $pdf->setPaper('a4', 'portrait');
+        $pdf = PDF::loadView('penawaran.pdflub', compact('penawaran', 'company'))
+            ->setPaper('A4', 'portrait');
 
-        // Langsung stream ke browser (inline)
-        return $pdf->stream("Quotation-{$penawaran->nomor_penawaran}.pdf");
+        $safeNomor = str_replace(['/', '\\'], '-', $penawaran->nomor_penawaran);
+        return $pdf->stream("Quotation-{$safeNomor}.pdf");
     }
 
-    /**
-     * GET /api/penawarans/{id}
-     */
+    /** GET /api/penawarans/{id} */
     public function show($id)
     {
         $penawaran = Penawaran::with([
             'customer',
             'cabang',
             'items.produk.jenis',
-            'items.produk.ukuran.satuan'
+            'items.produk.ukuran.satuan',
         ])->findOrFail($id);
-    
+
         return response()->json($penawaran);
     }
 
-    /**
-     * POST /api/penawarans
-     */
+    /** POST /api/penawarans — DISKON = nominal rupiah */
     public function store(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'id_customer'          => 'required|exists:customers,id_customer',
-        'id_cabang'            => 'required|exists:cabangs,id_cabang',
-        'masa_berlaku'         => 'required|date',
-        'sampai_dengan'        => 'required|date|after_or_equal:masa_berlaku',
-        'items'                => 'required|array|min:1',
-        'items.*.id_produk'    => 'required|exists:produks,id_produk',
-        'items.*.volume_order' => 'required|numeric|min:0',
-        'items.*.harga_tebus'  => 'required|numeric|min:0',
-        'tipe_pembayaran'      => 'nullable|string|max:100',
-        'order_method'         => 'nullable|string|max:100',
-        'toleransi_penyusutan' => 'nullable|numeric',
-        'lokasi_pengiriman'    => 'nullable|string|max:255',
-        'metode'               => 'nullable|string|max:100',
-        'refund'               => 'nullable|numeric',
-        'other_cost'           => 'nullable|numeric',
-        'perhitungan'          => 'nullable|string',
-        'keterangan'           => 'nullable|string',
-        'catatan'              => 'nullable|string',
-        'syarat_ketentuan'     => 'nullable|string',
-        'discount'             => 'nullable|numeric|min:0',
-        'oat'                  => 'nullable|numeric|min:0',
-        'jenis_penawaran'      => 'nullable|string|max:100',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json(['errors' => $validator->errors()], 422);
-    }
-
-    $data = $validator->validated();
-
-    // Nomor otomatis
-    $prefix = 'PNW-' . date('Ymd') . '-';
-    $last = Penawaran::where('nomor_penawaran', 'like', "{$prefix}%")
-        ->orderBy('nomor_penawaran', 'desc')->first();
-    $number = $last ? ((int) substr($last->nomor_penawaran, strlen($prefix)) + 1) : 1;
-    $data['nomor_penawaran'] = $prefix . str_pad($number, 5, '0', STR_PAD_LEFT);
-
-    // Hitung harga
-    $subtotal = 0;
-    foreach ($data['items'] as $it) {
-        $subtotal += $it['volume_order'] * $it['harga_tebus'];
-    }
-
-    $diskon_persen = $data['discount'] ?? 0;
-    $harga_setelah_diskon = $subtotal - ($subtotal * $diskon_persen / 100);
-
-    $oat_rp = $data['oat'] ?? 0;
-    $total_volume = array_sum(array_column($data['items'], 'volume_order'));
-    $total_oat = $oat_rp * $total_volume;
-
-    $ppn11 = round($harga_setelah_diskon * 0.11, 2);
-    $total_with_oat = $harga_setelah_diskon + $total_oat + $ppn11;
-
-    $data['subtotal'] = $subtotal;
-    $data['harga_tebus_setelah_diskon'] = $harga_setelah_diskon;
-    $data['ppn11'] = $ppn11;
-    $data['total'] = $harga_setelah_diskon + $ppn11;
-    $data['total_with_oat'] = $total_with_oat;
-
-    $data['created_at'] = now();
-    $data['created_by'] = $request->user()->name ?? null;
-
-    DB::beginTransaction();
-    try {
-        $penawaran = Penawaran::create($data);
-
-        foreach ($data['items'] as $it) {
-            PenawaranItem::create([
-                'id_penawaran' => $penawaran->id_penawaran,
-                'id_produk' => $it['id_produk'],
-                'volume_order' => $it['volume_order'],
-                'harga_tebus' => $it['harga_tebus'],
-                'jumlah_harga' => $it['volume_order'] * $it['harga_tebus'],
-            ]);
-        }
-
-        DB::commit();
-        $penawaran->load(['customer', 'cabang', 'items.produk']);
-        return response()->json($penawaran, 201);
-    } catch (\Throwable $e) {
-        DB::rollBack();
-        return response()->json(['message' => 'Gagal menyimpan penawaran', 'error' => $e->getMessage()], 500);
-    }
-}
-
-
-    /**
-     * PUT /api/penawarans/{id}
-     */
-    public function update(Request $request, $id)
     {
-        $penawaran = Penawaran::findOrFail($id);
-    
         $validator = Validator::make($request->all(), [
             'id_customer'          => 'required|exists:customers,id_customer',
             'id_cabang'            => 'required|exists:cabangs,id_cabang',
@@ -209,83 +130,483 @@ class PenawaranController extends Controller
             'items.*.harga_tebus'  => 'required|numeric|min:0',
             'tipe_pembayaran'      => 'nullable|string|max:100',
             'order_method'         => 'nullable|string|max:100',
-            'toleransi_penyusutan' => 'nullable|numeric',
+            'toleransi_penyusutan' => 'nullable|numeric|min:0',
             'lokasi_pengiriman'    => 'nullable|string|max:255',
             'metode'               => 'nullable|string|max:100',
-            'refund'               => 'nullable|numeric',
-            'other_cost'           => 'nullable|numeric',
+            'refund'               => 'nullable|numeric|min:0',
+            'other_cost'           => 'nullable|numeric|min:0',
+            'perhitungan'          => 'nullable|string',
+            'keterangan'           => 'nullable|string',
+            'catatan'              => 'nullable|string',
+            'syarat_ketentuan'     => 'nullable|string',
+            'discount'             => 'nullable|numeric|min:0',
+            'oat'                  => 'nullable|numeric|min:0', // per volume
+            'jenis_penawaran'      => 'nullable|string|max:100',
+            'kepada'   => 'nullable|string|max:255',
+'nama'     => 'nullable|string|max:255',
+'jabatan'  => 'nullable|string|max:255',
+'telepon'  => 'nullable|string|max:255',
+'alamat'   => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+        $data = $validator->validated();
+
+        // Nomor penawaran per cabang
+        $cabang = Cabang::findOrFail($data['id_cabang']);
+        $urutPenawaran    = (int) $cabang->urut_penawaran;
+        $newUrutPenawaran = $urutPenawaran + 1;
+
+        $bulanRomawi = $this->getRomanMonth(date('m'));
+        $tahun2Digit = substr(date('Y'), -2);
+
+        $nomorPenawaran = str_pad($newUrutPenawaran, 5, '0', STR_PAD_LEFT)
+            . '/PE-PN/' . $cabang->inisial_cabang . '/' . $bulanRomawi . '/' . $tahun2Digit;
+
+        $cabang->urut_penawaran = $newUrutPenawaran;
+        $cabang->save();
+
+        // Perhitungan
+        $subtotal = 0.0;
+        foreach ($data['items'] as $it) {
+            $subtotal += ((float)$it['volume_order']) * ((float)$it['harga_tebus']);
+        }
+
+        $diskon = $this->toFloat($data['discount'] ?? 0);
+        if ($diskon < 0) $diskon = 0.0;
+        if ($diskon > $subtotal) $diskon = $subtotal;
+
+        $setelahDiskon = $subtotal - $diskon;
+
+        // OAT (per volume; tangani input "250,00"/"250.00")
+        $oatPerVolume = $this->toFloat($data['oat'] ?? 0);
+        $totalVolume  = array_sum(array_column($data['items'], 'volume_order'));
+        $totalOat     = $oatPerVolume * (float)$totalVolume;
+
+        $ppn11 = round($setelahDiskon * 0.11, 2);
+        $total = $setelahDiskon + $ppn11;
+        $totalWithOat = $total + $totalOat;
+
+        // Simpan
+        $data['nomor_penawaran']            = $nomorPenawaran;
+        $data['subtotal']                   = $subtotal;
+        $data['harga_tebus_setelah_diskon'] = $setelahDiskon;
+        $data['ppn11']                      = $ppn11;
+        $data['total']                      = $total;
+        $data['total_with_oat']             = $totalWithOat;
+        $data['discount']                   = $diskon;      // nominal
+        $data['status']                     = 'draft';
+        $data['disposisi_penawaran']        = '1';
+        $data['created_at']                 = now();
+        $data['created_by']                 = optional($request->user())->name;
+
+        DB::beginTransaction();
+        try {
+            $penawaran = Penawaran::create($data);
+
+            foreach ($data['items'] as $it) {
+                PenawaranItem::create([
+                    'id_penawaran' => $penawaran->id_penawaran,
+                    'id_produk'    => $it['id_produk'],
+                    'volume_order' => $it['volume_order'],
+                    'harga_tebus'  => $it['harga_tebus'],
+                    'jumlah_harga' => $it['volume_order'] * $it['harga_tebus'],
+                ]);
+            }
+
+            DB::table('customers')
+                ->where('id_customer', $data['id_customer'])
+                ->update([
+                    'need_update'     => 1,
+                    'id_cabang'       => $data['id_cabang'],
+                    'lastupdate_time' => now(),
+                    'lastupdate_by'   => optional($request->user())->name,
+                ]);
+
+            DB::commit();
+
+            $penawaran->load(['customer', 'cabang', 'items.produk']);
+            return response()->json($penawaran, 201);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            report($e);
+            return response()->json([
+                'message' => 'Gagal menyimpan penawaran',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /** PUT /api/penawarans/{id} — DISKON = nominal rupiah */
+    public function update(Request $request, $id)
+    {
+        $penawaran = Penawaran::findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'id_customer'          => 'required|exists:customers,id_customer',
+            'id_cabang'            => 'required|exists:cabangs,id_cabang',
+            'masa_berlaku'         => 'required|date',
+            'sampai_dengan'        => 'required|date|after_or_equal:masa_berlaku',
+            'items'                => 'required|array|min:1',
+            'items.*.id_produk'    => 'required|exists:produks,id_produk',
+            'items.*.volume_order' => 'required|numeric|min:0',
+            'items.*.harga_tebus'  => 'required|numeric|min:0',
+            'tipe_pembayaran'      => 'nullable|string|max:100',
+            'order_method'         => 'nullable|string|max:100',
+            'toleransi_penyusutan' => 'nullable|numeric|min:0',
+            'lokasi_pengiriman'    => 'nullable|string|max:255',
+            'metode'               => 'nullable|string|max:100',
+            'refund'               => 'nullable|numeric|min:0',
+            'other_cost'           => 'nullable|numeric|min:0',
             'perhitungan'          => 'nullable|string',
             'keterangan'           => 'nullable|string',
             'catatan'              => 'nullable|string',
             'syarat_ketentuan'     => 'nullable|string',
             'discount'             => 'nullable|numeric|min:0',
             'oat'                  => 'nullable|numeric|min:0',
+            'kepada'   => 'nullable|string|max:255',
+'nama'     => 'nullable|string|max:255',
+'jabatan'  => 'nullable|string|max:255',
+'telepon'  => 'nullable|string|max:255',
+'alamat'   => 'nullable|string',
+
         ]);
-    
+
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
-    
         $data = $validator->validated();
-    
-        $subtotal = 0;
+
+        $subtotal = 0.0;
         foreach ($data['items'] as $it) {
-            $subtotal += $it['volume_order'] * $it['harga_tebus'];
+            $subtotal += ((float)$it['volume_order']) * ((float)$it['harga_tebus']);
         }
-    
-        $diskon_persen = $data['discount'] ?? 0;
-        $harga_setelah_diskon = $subtotal - ($subtotal * $diskon_persen / 100);
-    
-        $oat_rp = $data['oat'] ?? 0;
-        $total_volume = array_sum(array_column($data['items'], 'volume_order'));
-        $total_oat = $oat_rp * $total_volume;
-    
-        $ppn11 = round($harga_setelah_diskon * 0.11, 2);
-        $total_with_oat = $harga_setelah_diskon + $total_oat + $ppn11;
-    
-        $data['subtotal'] = $subtotal;
-        $data['harga_tebus_setelah_diskon'] = $harga_setelah_diskon;
-        $data['ppn11'] = $ppn11;
-        $data['total'] = $harga_setelah_diskon + $ppn11;
-        $data['total_with_oat'] = $total_with_oat;
-    
-        $data['updated_at'] = now();
-        $data['updated_by'] = $request->user()->name ?? null;
-    
+
+        $diskon = $this->toFloat($data['discount'] ?? 0);
+        if ($diskon < 0) $diskon = 0.0;
+        if ($diskon > $subtotal) $diskon = $subtotal;
+
+        $setelahDiskon = $subtotal - $diskon;
+
+        $oatPerVolume = $this->toFloat($data['oat'] ?? 0);
+        $totalVolume  = array_sum(array_column($data['items'], 'volume_order'));
+        $totalOat     = $oatPerVolume * (float)$totalVolume;
+
+        $ppn11 = round($setelahDiskon * 0.11, 2);
+        $total = $setelahDiskon + $ppn11;
+        $totalWithOat = $total + $totalOat;
+
+        $data['subtotal']                   = $subtotal;
+        $data['harga_tebus_setelah_diskon'] = $setelahDiskon;
+        $data['ppn11']                      = $ppn11;
+        $data['total']                      = $total;
+        $data['total_with_oat']             = $totalWithOat;
+        $data['discount']                   = $diskon;
+        $data['updated_at']                 = now();
+        $data['updated_by']                 = $request->user()->name ?? null;
+
         DB::beginTransaction();
         try {
             $penawaran->update($data);
-    
+
             PenawaranItem::where('id_penawaran', $penawaran->id_penawaran)->delete();
-    
             foreach ($data['items'] as $it) {
                 PenawaranItem::create([
                     'id_penawaran' => $penawaran->id_penawaran,
-                    'id_produk' => $it['id_produk'],
+                    'id_produk'    => $it['id_produk'],
                     'volume_order' => $it['volume_order'],
-                    'harga_tebus' => $it['harga_tebus'],
+                    'harga_tebus'  => $it['harga_tebus'],
                     'jumlah_harga' => $it['volume_order'] * $it['harga_tebus'],
                 ]);
             }
-    
+
             DB::commit();
             $penawaran->load(['customer', 'cabang', 'items.produk']);
             return response()->json($penawaran);
+
         } catch (\Throwable $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Gagal update penawaran', 'error' => $e->getMessage()], 500);
+            return response()->json([
+                'message' => 'Gagal update penawaran',
+                'error'   => $e->getMessage(),
+            ], 500);
         }
     }
-    
-    /**
-     * DELETE /api/penawarans/{id}
-     */
+
+    /** DELETE /api/penawarans/{id} */
     public function destroy($id)
     {
         $penawaran = Penawaran::findOrFail($id);
-        // Otomatis item akan ke‐hapus karena kita set onDelete('cascade') di migration
         $penawaran->delete();
-
         return response()->json(null, 204);
     }
+
+    /** PATCH /api/penawarans/{id}/ajukan — kirim email ke BM */
+    public function ajukan($id)
+    {
+        $penawaran = Penawaran::with(['customer','cabang'])->findOrFail($id);
+
+        if ($penawaran->status !== 'draft') {
+            return response()->json(['message' => 'Penawaran sudah diajukan sebelumnya'], 400);
+        }
+
+        $penawaran->update([
+            'status'              => 'waiting_branch_manager',
+            'disposisi_penawaran' => '2',
+            'updated_at'          => now(),
+        ]);
+
+        // kirim ke semua BM
+        $recipients = $this->getRoleEmails(['branch manager', 'Branch Manager', 'BM']);
+        if (!empty($recipients)) {
+            try {
+                $detailUrl = $this->detailUrl($penawaran->id_penawaran);
+                Mail::to($recipients)->send(new PenawaranSubmittedMail($penawaran, $detailUrl));
+            } catch (\Throwable $e) {
+                report($e); // jangan gagalkan flow
+            }
+        }
+
+        return response()->json(['message' => 'Penawaran berhasil diajukan']);
+    }
+
+    /** POST /api/penawarans/{id}/verifikasi-bm */
+    public function verifikasi(Request $request, $id)
+    {
+        $penawaran = Penawaran::with(['customer','cabang'])->findOrFail($id);
+        $request->validate(['catatan' => 'nullable|string']);
+
+        $penawaran->update([
+            'status'              => 'approved_bm',
+            'catatan_verifikasi'  => $request->catatan,
+            'bm_result'           => '1',
+            'bm_tanggal'          => now(),
+            'approved_at'         => now(),
+            'approved_by'         => $request->user()->name ?? 'BM',
+            'disposisi_penawaran' => 3, // next: OM
+        ]);
+
+        // >>> Kirim email ke semua OM untuk verifikasi <<<
+        $omRecipients = $this->getRoleEmails(['CEO', 'CEO', 'CEO']);
+        if (!empty($omRecipients)) {
+            try {
+                $detailUrl = $this->detailUrl($penawaran->id_penawaran);
+                Mail::to($omRecipients)->send(new PenawaranNeedOmApprovalMail($penawaran, $detailUrl));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        return response()->json(['message' => 'Status penawaran diperbarui']);
+    }
+
+    /** POST /api/penawarans/{id}/tolak-bm */
+    public function tolakbm(Request $request, $id)
+    {
+        $penawaran = Penawaran::with(['customer','cabang'])->findOrFail($id);
+        $request->validate(['catatan' => 'nullable|string']);
+
+        $penawaran->update([
+            'status'              => 'rejected_bm',
+            'catatan_verifikasi'  => $request->catatan,
+            'bm_result'           => '1',
+            'bm_tanggal'          => now(),
+            'disposisi_penawaran' => 5,
+        ]);
+
+        // >>> Kirim email ke pembuat penawaran <<<
+        $creatorEmail = $this->getCreatorEmail($penawaran->created_by);
+        if ($creatorEmail) {
+            try {
+                $detailUrl = $this->detailUrl($penawaran->id_penawaran);
+                Mail::to($creatorEmail)->send(
+                    new PenawaranRejectedMail($penawaran, $request->catatan, 'Ditolak oleh Branch Manager', $detailUrl)
+                );
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        return response()->json(['message' => 'Status penawaran Ditolak']);
+    }
+
+    /** POST /api/penawarans/{id}/tolak-om */
+    public function tolakom(Request $request, $id)
+    {
+        $penawaran = Penawaran::with(['customer','cabang'])->findOrFail($id);
+        $request->validate(['catatan' => 'nullable|string']);
+
+        $penawaran->update([
+            'status'              => 'rejected_om',
+            'catatan_om'          => $request->catatan,
+            'om_result'           => '1',
+            'om_tanggal'          => now(),
+            'disposisi_penawaran' => 6,
+        ]);
+
+        // >>> Kirim email ke pembuat penawaran <<<
+        $creatorEmail = $this->getCreatorEmail($penawaran->created_by);
+        if ($creatorEmail) {
+            try {
+                $detailUrl = $this->detailUrl($penawaran->id_penawaran);
+                Mail::to($creatorEmail)->send(
+                    new PenawaranRejectedMail($penawaran, $request->catatan, 'Ditolak oleh Operational Manager', $detailUrl)
+                );
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        return response()->json(['message' => 'Status penawaran Ditolak']);
+    }
+
+    /** GET /api/penawarans/om */
+    public function indexForOperationalManager(Request $request)
+    {
+        $perPage = $request->query('per_page', 10);
+        $search  = $request->query('search');
+
+        $query = Penawaran::with(['customer', 'cabang', 'items.produk'])
+            ->whereIn('disposisi_penawaran', [1, 2, 3, 4, 5, 6]);
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nomor_penawaran', 'like', "%{$search}%")
+                  ->orWhere('kepada', 'like', "%{$search}%")
+                  ->orWhere('nama', 'like', "%{$search}%");
+            });
+        }
+
+        $data = $query->orderBy('created_at', 'desc')->paginate($perPage);
+        return response()->json($data);
+    }
+
+    /** POST /api/penawarans/{id}/verifikasi-om */
+    public function verifikasiOm(Request $request, $id)
+    {
+        $penawaran = Penawaran::findOrFail($id);
+        $request->validate(['catatan' => 'nullable|string']);
+
+        $penawaran->update([
+            'status'              => 'approved_om',
+            'om_result'           => '1',
+            'om_tanggal'          => now(),
+            'disposisi_penawaran' => 4,
+            'catatan_om'          => $request->catatan,
+        ]);
+
+        // (opsional) Bisa juga kirim email ke creator bahwa penawaran sudah disetujui OM
+        return response()->json(['message' => 'Status penawaran diperbarui oleh OM']);
+    }
+
+    /** Helper: bulan Romawi */
+    public function getRomanMonth($month)
+    {
+        $months = [
+            '01' => 'I', '02' => 'II', '03' => 'III', '04' => 'IV',
+            '05' => 'V', '06' => 'VI', '07' => 'VII','08' => 'VIII',
+            '09' => 'IX','10' => 'X',  '11' => 'XI','12' => 'XII',
+        ];
+        return $months[$month] ?? '';
+    }
+
+    /** Helper: normalisasi angka lokal -> float */
+    private function toFloat($v): float
+    {
+        if ($v === null || $v === '') return 0.0;
+        if (is_numeric($v)) return (float)$v;
+
+        $s = trim((string)$v);
+        if (strpos($s, ',') !== false && strpos($s, '.') !== false) {
+            $s = str_replace('.', '', $s); // hapus pemisah ribuan
+            $s = str_replace(',', '.', $s); // desimal ke titik
+            return (float)$s;
+        }
+        if (strpos($s, ',') !== false) {
+            $s = str_replace(',', '.', $s);
+        }
+        return (float)$s;
+    }
+
+    /** ====== EMAIL HELPERS ====== */
+
+    private function detailUrl(int $idPenawaran): string
+    {
+        // sesuaikan dengan route FE kamu
+        return url("/app/penawarans/{$idPenawaran}/detail");
+    }
+
+    /**
+     * Ambil email semua user dengan role_name di daftar $roleNames.
+     * Menghormati kolom is_active jika ada.
+     */
+    private function getRoleEmails(array $roleNames): array
+    {
+        $roleIds = Role::whereIn('role_name', $roleNames)->pluck('id_role');
+
+        $query = User::whereIn('id_role', $roleIds)
+            ->whereNotNull('email');
+
+        if (Schema::hasColumn('users', 'is_active')) {
+            $query->where('is_active', true);
+        }
+
+        return $query->pluck('email')->unique()->values()->all();
+    }
+
+    /**
+     * Ambil email pembuat penawaran berdasarkan kolom created_by (nama user).
+     * Return null jika tidak ditemukan.
+     */
+    private function getCreatorEmail(?string $creatorName): ?string
+    {
+        if (!$creatorName) return null;
+
+        $query = User::where('name', $creatorName)->whereNotNull('email');
+
+        if (Schema::hasColumn('users', 'is_active')) {
+            $query->where('is_active', true);
+        }
+
+        $user = $query->first();
+        return $user?->email;
+    }
+
+    // PenawaranController.php (tambahkan method baru ini)
+public function previewPdfMultiLang(Request $request, $id)
+{
+    $lang = strtolower($request->query('lang', 'id')); // default: Indonesia
+    $penawaran = Penawaran::with(['customer', 'cabang', 'items.produk.ukuran'])->findOrFail($id);
+
+    $company = [
+        'nama_perusahaan' => config('app.name'),
+        'alamat'          => 'Alamat Perusahaan Anda',
+        'telepon'         => '021-xxxxxxx',
+        'fax'             => '021-xxxxxxx',
+        'logo_path'       => null,
+    ];
+
+    // Pilih view berdasarkan bahasa + jenis_penawaran
+    // Misal:
+    // - Indonesia:  resources/views/penawaran/pdf_id.blade.php
+    // - English:    resources/views/penawaran/pdf_en.blade.php
+    // - Untuk jenis lubricant, pakai pdf_lub_id / pdf_lub_en
+    $jenis = (int) ($penawaran->jenis_penawaran ?? 1);
+
+    if ($jenis === 2) {
+        $view = $lang === 'en' ? 'penawaran.pdf_lub_en' : 'penawaran.pdf_lub_id';
+    } else {
+        $view = $lang === 'en' ? 'penawaran.pdf_en' : 'penawaran.pdf_id';
+    }
+
+    $pdf = \PDF::loadView($view, compact('penawaran', 'company'))->setPaper('A4', 'portrait');
+
+    $safeNomor = str_replace(['/', '\\'], '-', $penawaran->nomor_penawaran);
+    $suffix = $lang === 'en' ? 'EN' : 'ID';
+    return $pdf->stream("Quotation-{$safeNomor}-{$suffix}.pdf");
+}
+
 }

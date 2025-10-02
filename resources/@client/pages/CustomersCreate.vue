@@ -3,22 +3,26 @@
     <div class="intro-y grid grid-cols-12 gap-6 mt-8">
       <div class="col-span-12">
         <div class="p-5 box">
-          <h2 class="text-lg font-medium mb-4">Tambah Customer</h2>
+          <!-- Header -->
+          <div class="flex items-center mb-4">
+            <h2 class="text-lg font-medium">Tambah Customer</h2>
+           
+          </div>
 
-          <!-- Pesan error -->
           <p v-if="error" class="text-red-500 mb-3">{{ error }}</p>
 
-          <div class="space-y-4">
-            <!-- 1. Pilih User -->
+          <form @submit.prevent="submit" class="space-y-4">
+            <!-- 1. User -->
             <div>
-              <FormLabel for="user">User</FormLabel>
-              <FormSelect id="user" v-model="form.id_user">
+              <FormLabel for="user">User *</FormLabel>
+              <FormSelect
+                id="user"
+                ref="userRef"
+                v-model="form.id_user"
+                :class="{'border-rose-500': showErrors && !form.id_user}"
+              >
                 <option disabled value="">-- Pilih User --</option>
-                <option
-                  v-for="u in users"
-                  :key="u.id"
-                  :value="u.id"
-                >
+                <option v-for="u in users" :key="u.id" :value="u.id">
                   {{ u.name }}
                 </option>
               </FormSelect>
@@ -26,39 +30,44 @@
 
             <!-- 2. Email -->
             <div>
-              <FormLabel for="email">Email</FormLabel>
+              <FormLabel for="email">Email *</FormLabel>
               <FormInput
                 id="email"
+                ref="emailRef"
                 v-model="form.email"
                 placeholder="Email"
+                :class="{'border-rose-500': showErrors && !form.email.trim()}"
+                autocomplete="off"
               />
             </div>
 
-            <!-- 3. Pilih Provinsi -->
+            <!-- 3. Provinsi -->
             <div>
-              <FormLabel for="provinsi">Provinsi</FormLabel>
-              <FormSelect id="provinsi" v-model="form.id_provinsi">
+              <FormLabel for="provinsi">Provinsi *</FormLabel>
+              <FormSelect
+                id="provinsi"
+                ref="provinsiRef"
+                v-model="form.id_provinsi"
+                :class="{'border-rose-500': showErrors && !form.id_provinsi}"
+              >
                 <option disabled value="">-- Pilih Provinsi --</option>
-                <option
-                  v-for="p in provinsis"
-                  :key="p.id_provinsi"
-                  :value="p.id_provinsi"
-                >
+                <option v-for="p in provinsis" :key="p.id_provinsi" :value="p.id_provinsi">
                   {{ p.nama_provinsi }}
                 </option>
               </FormSelect>
             </div>
 
-            <!-- 4. Pilih Kabupaten (filtered) -->
+            <!-- 4. Kabupaten -->
             <div>
-              <FormLabel for="kabupaten">Kabupaten</FormLabel>
-              <FormSelect id="kabupaten" v-model="form.id_kabupaten">
+              <FormLabel for="kabupaten">Kabupaten *</FormLabel>
+              <FormSelect
+                id="kabupaten"
+                ref="kabupatenRef"
+                v-model="form.id_kabupaten"
+                :class="{'border-rose-500': showErrors && !form.id_kabupaten}"
+              >
                 <option disabled value="">-- Pilih Kabupaten --</option>
-                <option
-                  v-for="k in kabupatens"
-                  :key="k.id_kabupaten"
-                  :value="k.id_kabupaten"
-                >
+                <option v-for="k in kabupatens" :key="k.id_kabupaten" :value="k.id_kabupaten">
                   {{ k.nama_kabupaten }}
                 </option>
               </FormSelect>
@@ -66,26 +75,34 @@
 
             <!-- 5. Telepon -->
             <div>
-              <FormLabel for="telepon">Telepon</FormLabel>
+              <FormLabel for="telepon">Telepon *</FormLabel>
               <FormInput
                 id="telepon"
+                ref="teleponRef"
                 v-model="form.telepon"
                 type="text"
                 placeholder="Telepon"
+                :class="{'border-rose-500': showErrors && !form.telepon.trim()}"
+                autocomplete="off"
               />
             </div>
 
             <!-- 6. Jenis Customer -->
             <div>
-              <FormLabel for="jenis_customer">Jenis Customer</FormLabel>
-              <FormSelect id="jenis_customer" v-model="form.jenis_customer">
+              <FormLabel for="jenis_customer">Jenis Customer *</FormLabel>
+              <FormSelect
+                id="jenis_customer"
+                ref="jenisRef"
+                v-model="form.jenis_customer"
+                :class="{'border-rose-500': showErrors && !form.jenis_customer}"
+              >
                 <option disabled value="">-- Pilih Jenis --</option>
                 <option value="Retail">Retail</option>
                 <option value="Project">Project</option>
               </FormSelect>
             </div>
 
-            <!-- 7. Nama Perusahaan -->
+            <!-- 7. Nama Perusahaan (opsional) -->
             <div>
               <FormLabel for="nama_perusahaan">Nama Perusahaan</FormLabel>
               <FormInput
@@ -96,8 +113,7 @@
               />
             </div>
 
-
-            <!-- 8. Alamat Perusahaan -->
+            <!-- 8. Alamat Perusahaan (opsional) -->
             <div>
               <FormLabel for="alamat_perusahaan">Alamat Perusahaan</FormLabel>
               <textarea
@@ -108,34 +124,41 @@
               ></textarea>
             </div>
 
-            <!-- 9. Fax & Kode Pos -->
-            <div class="grid grid-cols-2 gap-4">
+            <!-- 9. Fax & Kode Pos (opsional) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <FormLabel for="fax">Fax</FormLabel>
-                <FormInput
-                  id="fax"
-                  v-model="form.fax"
-                  placeholder="Fax (opsional)"
-                />
+                <FormInput id="fax" v-model="form.fax" placeholder="Fax (opsional)" />
               </div>
               <div>
                 <FormLabel for="postal_code">Kode Pos</FormLabel>
-                <FormInput
-                  id="postal_code"
-                  v-model="form.postal_code"
-                  placeholder="Kode Pos"
-                />
+                <FormInput id="postal_code" v-model="form.postal_code" placeholder="Kode Pos" />
               </div>
             </div>
-          </div>
 
-          <!-- Tombol Batal & Simpan -->
-          <div class="mt-6 flex justify-end space-x-2">
-            <Button variant="outline-secondary" @click="cancel">Batal</Button>
-            <Button variant="primary" :loading="loading" @click="submit">
-              Simpan
-            </Button>
-          </div>
+            <!-- Actions -->
+            <div class="mt-6 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline-secondary"
+                @click="cancel"
+                class="inline-flex items-center gap-2"
+                :disabled="loading"
+              >
+                <Lucide icon="X" class="w-4 h-4" aria-hidden="true" />
+                <span>Batal</span>
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                :loading="loading"
+                class="inline-flex items-center gap-2"
+              >
+                <Lucide v-if="!loading" icon="Save" class="w-4 h-4" aria-hidden="true" />
+                <span>Simpan</span>
+              </Button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -143,19 +166,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, watch, nextTick } from 'vue'
 import axios from 'axios'
 import Swal from 'sweetalert2'
-import { useRouter } from 'vue-router'
+import { useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+
 import { FormInput, FormSelect, FormLabel } from '@/components/Base/Form'
 import Button from '@/components/Base/Button'
+import Lucide from '@/components/Base/Lucide'
 
-// router + auth
 const router = useRouter()
 const auth   = useAuthStore()
 
-// reactive form
 const form = reactive({
   id_user:           '' as number | string,
   email:             '',
@@ -171,16 +194,22 @@ const form = reactive({
   created_by:        auth.user?.name || ''
 })
 
-// dropdown data
 const users      = ref<any[]>([])
 const provinsis  = ref<any[]>([])
 const kabupatens = ref<any[]>([])
 
-// loading & error
 const loading = ref(false)
 const error   = ref('')
 
-// ambil list user & provinsi
+// refs untuk fokus
+const userRef      = ref<HTMLElement|null>(null)
+const emailRef     = ref<HTMLInputElement|null>(null)
+const provinsiRef  = ref<HTMLElement|null>(null)
+const kabupatenRef = ref<HTMLElement|null>(null)
+const teleponRef   = ref<HTMLInputElement|null>(null)
+const jenisRef     = ref<HTMLElement|null>(null)
+
+// data awal
 async function fetchUsers() {
   const res = await axios.get('/api/users', { params: { per_page: 100 } })
   users.value = res.data.data || res.data
@@ -190,7 +219,6 @@ async function fetchProvinsis() {
   provinsis.value = res.data.data || res.data
 }
 
-// ketika provinsi berubah → fetch kabupaten sesuai id_provinsi
 watch(() => form.id_provinsi, async (newProv) => {
   form.id_kabupaten = ''
   if (!newProv) {
@@ -198,34 +226,63 @@ watch(() => form.id_provinsi, async (newProv) => {
     return
   }
   const res = await axios.get('/api/kabupatens', {
-    params: {
-      id_provinsi: newProv,
-      per_page:    100
-    }
+    params: { id_provinsi: newProv, per_page: 100 }
   })
   kabupatens.value = res.data.data
 })
 
-// onMounted: jalankan fetchUsers & fetchProvinsis
 onMounted(async () => {
   await fetchUsers()
   await fetchProvinsis()
 })
 
-// submit form
+/* ===== VALIDASI SWEETALERT (tanpa required) ===== */
+const showErrors = ref(false)
+
+function missingFields(): string[] {
+  const m: string[] = []
+  if (!form.id_user)        m.push('User')
+  if (!form.email.trim())   m.push('Email')
+  if (!form.id_provinsi)    m.push('Provinsi')
+  if (!form.id_kabupaten)   m.push('Kabupaten')
+  if (!form.telepon.trim()) m.push('Telepon')
+  if (!form.jenis_customer) m.push('Jenis Customer')
+  return m
+}
+
+async function showMissingAlert(miss: string[]) {
+  const list = `<ul style="text-align:left;margin:8px 0 0 14px;">${miss.map(i=>`<li>${i}</li>`).join('')}</ul>`
+  await Swal.fire({
+    icon: 'error',
+    title: 'Lengkapi data wajib',
+    html: `Field berikut tidak boleh kosong:${list}`,
+    confirmButtonText: 'OK'
+  })
+}
+
+async function focusFirstMissing() {
+  await nextTick()
+  if (!form.id_user && userRef.value)             return (userRef.value as HTMLSelectElement).focus()
+  if (!form.email.trim() && emailRef.value)       return emailRef.value.focus()
+  if (!form.id_provinsi && provinsiRef.value)     return (provinsiRef.value as HTMLSelectElement).focus()
+  if (!form.id_kabupaten && kabupatenRef.value)   return (kabupatenRef.value as HTMLSelectElement).focus()
+  if (!form.telepon.trim() && teleponRef.value)   return teleponRef.value.focus()
+  if (!form.jenis_customer && jenisRef.value)     return (jenisRef.value as HTMLSelectElement).focus()
+}
+
 async function submit() {
   error.value = ''
-  // validasi singkat
-  if (!form.id_user)           return Swal.fire('Error','User wajib dipilih','error')
-  if (!form.email.trim())      return Swal.fire('Error','Email wajib diisi','error')
-  if (!form.id_provinsi)       return Swal.fire('Error','Provinsi wajib dipilih','error')
-  if (!form.id_kabupaten)      return Swal.fire('Error','Kabupaten wajib dipilih','error')
-  if (!form.telepon.trim())    return Swal.fire('Error','Telepon wajib diisi','error')
-  if (!form.jenis_customer)    return Swal.fire('Error','Jenis customer wajib dipilih','error')
+  showErrors.value = true
+
+  const miss = missingFields()
+  if (miss.length) {
+    await showMissingAlert(miss)
+    await focusFirstMissing()
+    return
+  }
 
   loading.value = true
   try {
-    // pastikan numeric
     const payload = {
       ...form,
       id_user:      Number(form.id_user),
@@ -238,7 +295,8 @@ async function submit() {
       title: 'Customer berhasil dibuat',
       toast: true,
       position: 'top-end',
-      timer: 1500
+      timer: 1500,
+      showConfirmButton: false
     })
     router.push({ name: 'customers-list' })
   } catch (e: any) {
@@ -248,8 +306,10 @@ async function submit() {
   }
 }
 
-// batal → kembali
-function cancel() {
-  router.back()
-}
+function cancel() { router.back() }
 </script>
+
+<style scoped>
+/* highlight merah saat invalid (tanpa required native) */
+.border-rose-500 { box-shadow: 0 0 0 1px rgba(244, 63, 94, .6) inset; }
+</style>

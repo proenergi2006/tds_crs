@@ -13,6 +13,10 @@ export interface Menu {
   pageName?: string;
   subMenu?: Menu[];
   ignore?: boolean;
+  badge?: {
+    counter: 'pendingCfo' | 'pendingCeo'
+    role?: number        // kalau diisi, badge hanya tampil untuk role ini
+  }
 }
 
 export interface MenuState {
@@ -40,14 +44,27 @@ export const useMenuStore = defineStore('menu', {
         if (typeof item !== 'string' && item.title === 'Access Control') {
           // hanya return true (tampilkan) jika roleId === 1
           return roleId === 1
-        }else if(typeof item !== 'string' && item.title === 'Refrensi-Data' || item.title === 'Master Wilayah'){
+        }else if(typeof item !== 'string' && item.title === 'Refrensi Data' || item.title === 'Master Wilayah'){
           return roleId === 2 
         }else if(typeof item !== 'string' && item.title === 'Inventory-Data' || item.title === 'Transactions-Data' || item.title === 'Master-Data'){
           return roleId === 5
         }else if(typeof item !== 'string' && item.title === 'Customer'){
           return roleId === 4
-        }
-        return true
+        }else if(typeof item !== 'string' && item.title === 'Master Logistik' || item.title === 'Review Data Customer Logistik' || item.title === 'Delivery Plan'){
+          return roleId === 7
+        }else if(typeof item !== 'string' && item.title === 'PO Customer'){
+          return roleId === 4
+        }else if(typeof item !== 'string' && item.title === 'Sales Confirmation' || item.title === 'Review Data Customer Admin'){
+          return roleId === 9
+        }else if(typeof item !== 'string' && item.title === 'Sales Confirmation (BM)' || item.title === 'Verifikasi BM' || item.title === 'Review Customer BM'){
+          return roleId === 8
+        }else if(typeof item !== 'string' && item.title === 'Verifikasi'){
+          return roleId === 2 || roleId === 3
+        }else if(typeof item !== 'string' && item.title === 'Verifikasi-om' || item.title === 'Review Data Customer OM'){
+          return roleId === 10
+        }else if(typeof item !== 'string' && item.title === 'Verifikasi LCR - Logistik'){
+          return roleId === 6
+        }return true
        
       })
     },

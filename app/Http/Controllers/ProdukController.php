@@ -8,16 +8,22 @@ use Illuminate\Http\Request;
 class ProdukController extends Controller
 {
     public function index(Request $request)
-    {
-        $q = Produk::with('ukuran.satuan','jenis');
+{
+    $q = Produk::with('ukuran.satuan','jenis');
 
-        if ($s = $request->query('search')) {
-            $q->where('nama_produk', 'like', "%{$s}%");
-        }
-
-        $perPage = $request->query('per_page', 10);
-        return response()->json($q->paginate($perPage));
+    if ($s = $request->query('search')) {
+        $q->where('nama_produk', 'like', "%{$s}%");
     }
+
+    // Ambil parameter urut (opsional), beri default newest first
+    $sortBy  = $request->query('sort_by', 'id_produk');     // atau 'created_time'
+    $sortDir = $request->query('sort_dir', 'desc');          // 'asc' / 'desc'
+
+    $q->orderBy($sortBy, $sortDir);
+
+    $perPage = (int) $request->query('per_page', 10);
+    return response()->json($q->paginate($perPage));
+}
 
     public function store(Request $request)
 {

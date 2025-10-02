@@ -37,14 +37,20 @@ class Penawaran extends Model
         'catatan',
         'syarat_ketentuan',
         'discount',
-'harga_tebus_setelah_diskon',
-'total_with_oat',
-'oat',
+        'harga_tebus_setelah_diskon',
+        'total_with_oat',
+        'oat',
         'created_at',
         'created_by',
         'updated_at',
         'updated_by',
-        'jenis_penawaran', // tambahkan ini
+        'jenis_penawaran',
+        'status', // tambahkan ini
+        'disposisi_penawaran',
+        'bm_result',
+        'bm_tanggal',
+        'catatan_verifikasi',
+        'catatan_om'
     ];
 
     /******** Relasi ********/
@@ -66,4 +72,6 @@ class Penawaran extends Model
     {
         return $this->hasMany(PenawaranItem::class, 'id_penawaran', 'id_penawaran');
     }
+
+    
 }

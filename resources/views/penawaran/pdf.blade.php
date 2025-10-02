@@ -1,282 +1,320 @@
-{{-- resources/views/vendor_pos/penawaran_pdf.blade.php --}}
+{{-- resources/views/vendor_pos/penawaran_pdf_letter.blade.php --}}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Penawaran {{ $penawaran->nomor_penawaran }}</title>
+  <meta charset="UTF-8">
+  <title>Penawaran {{ $penawaran->nomor_penawaran }}</title>
+  <style>
+    /* Kertas A4 potrait + ruang bawah besar untuk pita hijau */
+    @page{
+      size: A4 portrait;
+      margin-top: 44mm;
+      margin-bottom: 44mm;   /* ruang untuk footer + pita */
+      margin-left: 42mm;
+      margin-right: 42mm;
+    }
 
-    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700&display=swap" rel="stylesheet" />
+    *{ box-sizing:border-box; margin:0; padding:0 }
+    body{ font-family: DejaVu Sans, Arial, Helvetica, sans-serif; font-size:10.1px; color:#222; line-height:1.45 }
 
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Mulish', sans-serif;
-            color: #2f4f2f;
-            background-color: #f0f5f0;
-            line-height: 1.5;
-        }
-        .container {
-            width: 720px;
-            margin: 0 auto;
-            background: #fff;
-            box-shadow: 0 0 10px rgba(0,0,0,0.05);
-            padding: 30px 40px;
-        }
-        h1, h2, h3, h4 {
-            color: #34623f;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .header-left img,
-        .header-right img {
-            max-height: 60px;
-        }
-        .header-mid {
-            text-align: center;
-            flex: 1;
-        }
-        .header-mid h1 {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 4px;
-            letter-spacing: 1px;
-        }
-        .header-mid h2 {
-            font-size: 14px;
-            font-weight: 600;
-            color: #6b8e6b;
-        }
-        .header-info {
-            text-align: right;
-            font-size: 12px;
-            color: #555;
-            margin-top: 6px;
-        }
-        .party-info {
-            margin: 25px 0;
-            font-size: 13px;
-            color: #444;
-        }
-        .party-info strong {
-            color: #2f4f2f;
-        }
-        .intro-text {
-            font-size: 13px;
-            color: #4a4a4a;
-            margin-bottom: 25px;
-            text-align: justify;
-        }
-        .item-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 25px;
-            font-size: 13px;
-        }
-        .item-table th,
-        .item-table td {
-            border: 1px solid #c4d0c4;
-            padding: 10px 12px;
-        }
-        .item-table th {
-            background-color: #6b8e6b;
-            color: #fff;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 12px;
-        }
-        .item-table tr:nth-child(even) td {
-            background-color: #f7f9f7;
-        }
-        .item-table td {
-            background-color: #fff;
-            color: #333;
-        }
-        .item-table td:first-child,
-        .item-table th:first-child {
-            text-align: left;
-        }
-        .item-table td:nth-child(2),
-        .item-table td:nth-child(3),
-        .item-table td:nth-child(4) {
-            text-align: right;
-        }
-        .totals {
-            width: 100%;
-            margin-bottom: 30px;
-            font-size: 13px;
-        }
-        .totals-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 6px;
-        }
-        .totals-row span {
-            color: #333;
-            font-weight: 500;
-        }
-        .totals-row strong {
-            color: #2f4f2f;
-            font-weight: 600;
-        }
-        .totals-container {
-            background-color: #e1eace;
-            padding: 12px 15px;
-            border-radius: 6px;
-        }
-        .closing {
-            font-size: 13px;
-            color: #444;
-            margin-top: 30px;
-            text-align: justify;
-        }
-        .closing strong {
-            color: #2f4f2f;
-        }
-        .footer {
-            margin-top: 45px;
-            font-size: 11px;
-            color: #666;
-            text-align: center;
-            border-top: 1px solid #ddd;
-            padding-top: 10px;
-        }
-    </style>
+    /* Wrapper konten */
+    .content{ width:82%; margin:0 auto }
+
+    /* Header */
+    .hdr{ width:100%; border-collapse:collapse; margin-bottom:6px }
+    .hdr td{ vertical-align:top }
+    .logo img{ height:14mm; width:auto }   /* atur ukuran logo */
+    .right{ text-align:right; color:#555; font-size:11.5px }
+
+    .refrow{ width:100%; border-collapse:collapse; margin-bottom:10px }
+    .refrow td{ vertical-align:top; font-size:11.5px }
+    .refleft{ color:#222 }
+    .refright{ text-align:right; color:#555 }
+
+    .attnwrap{ width:100%; border-collapse:collapse; margin-bottom:8px }
+    .attnwrap td{ vertical-align:top }
+    .attn{ font-size:11.8px }
+    .attn strong{ font-weight:700 }
+
+    .subject{ text-align:center; font-weight:700; font-size:13.8px; margin:12px 0 9px }
+    .p{ margin:4px 0 8px; text-align:justify }
+
+    /* ====== Bagian 1–9 TANPA KOTAK ====== */
+    .box{ width:70%; margin:8px auto 10px; padding:0 } /* border dihilangkan */
+    .kv{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  border-top: 1px solid #cfd8dc;     /* garis di atas "1. Product" */
+  border-bottom: 1px solid #cfd8dc;  /* garis di bawah "9. Tolerance" */
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+/* Biar jarak atas/bawah enak dilihat */
+.kv tr:first-child td  { padding-top: 8px; }
+.kv tr:last-child  td  { padding-bottom: 8px; }
+
+/* Pemisah antar baris tetap */
+.kv tr + tr td{ border-top: 0.5px dashed #e6e6e6; }*/
+    .no{ width:20px; font-weight:700 }
+    .label{ width:165px; color:#555; font-size:9.8px }
+    .colon{ width:8px }
+    .value{ width:auto; line-height:1.32; font-size:9.8px }
+    .value b{ font-weight:700 }
+
+    /* Signature + contact */
+    .sigrow{ width:100%; border-collapse:collapse; margin-top:8px }
+    .sigrow td{ vertical-align:top; padding-right:10px }
+    .sigrow td:last-child{ padding-right:0 }
+    .sp-sign{ height:52px }
+    /* Kartu kontak dengan gradasi hijau */
+.contact{
+  border: 1px solid #b7d7b7;       /* hijau muda */
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #e9f7ef;             /* fallback */
+  background-image: linear-gradient(
+    180deg,                         /* arah vertikal */
+    #e9f7ef 0%,
+    #d7f0da 40%,
+    #c8e6c9 100%
+  );
+  font-size: 11.2px;
+  color: #1b5e20;                   /* teks hijau tua agar kontras */
+  background-clip: padding-box;     /* jaga sudut rounded rapi */
+}
+.contact b{
+  display:block;
+  margin-bottom:6px;
+  color:#1b5e20;
+}
+
+/* Watermark CSS-only */
+.wm {
+  position: fixed;                 /* muncul di semua halaman */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  width: 100%;
+  text-align: center;
+
+  font-family: DejaVu Sans, Arial, Helvetica, sans-serif;
+  font-weight: 700;
+  font-size: 120pt;                /* sesuaikan besar watermark */
+  color: rgba(0, 0, 0, 0.08);      /* transparan */
+  letter-spacing: 6px;
+
+  z-index: 0;                      /* di belakang konten */
+  pointer-events: none;            /* jaga tidak mengganggu */
+}
+
+/* pastikan konten di atas watermark */
+.content { position: relative; z-index: 1; }
+
+
+    /* ====== Footer teks di atas pita hijau ====== */
+    /* Sisakan ruang bawah untuk footer */
+
+
+/* Pita hijau full width di paling bawah */
+/* pita hijau full width, nempel kanan–kiri & bawah */
+.brand-band{
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 18mm;
+  background: #57955a;          /* boleh nanti diganti gradient */
+  border: none;
+}
+
+/* teks footer di atas pita, rapih sejajar dengan margin konten */
+.footer{
+  position: fixed;              /* <-- perbaiki: 1 titik saja */
+  left: 42mm;                   /* sejajar margin kiri konten */
+  right: 42mm;                  /* sejajar margin kanan konten */
+  bottom: 6mm;                  /* jarak dari tepi bawah kertas */
+  text-align: center;
+  font-size: 10.8px;
+  color: #fff;
+  padding: 0;
+  border: none;
+}
+
+
+  </style>
 </head>
 <body>
-    <div class="container">
-        {{-- Header --}}
-        <div class="header">
-            <div class="header-left">
-                <img src="{{ public_path('images/logo_crushed_stone.png') }}" alt="Logo Crushed Stone" />
-            </div>
-            <div class="header-mid">
-                <h1><u>Quotation<</u></h1>
-                <h2>No. {{ $penawaran->nomor_penawaran }}</h2>
-                <div class="header-info">
-                    Jakarta, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}<br>
-                    Hal : Penawaran Harga Batu Crushed Stone
-                </div>
-            </div>
-           
+  <div class="wm">DRAFT</div>
+@php
+  $nowID = \Carbon\Carbon::now()->translatedFormat('d F Y');
+  $cust  = optional($penawaran->customer);
+
+  $produkList = $penawaran->items
+      ->map(fn($it) => optional($it->produk)->nama_produk)
+      ->filter()->unique()->implode(', ');
+
+  $firstItem   = $penawaran->items->first();
+  $hargaSatuan = $firstItem?->harga_tebus ?? 0;
+
+  $rupiah = fn($n) => 'Rp '.number_format((float)$n, 0, ',', '.');
+
+  $due = $penawaran->periode_sampai_dengan
+      ? \Carbon\Carbon::parse($penawaran->periode_sampai_dengan)->translatedFormat('d F Y')
+      : '—';
+
+  $defaultProduct   = 'Crushed Stone 2-3 (50%), 3-5 (50%) &mdash; Blending (Aggregate)';
+  $defaultPayment   = '50% After Barge Reached Jetty MBL; 50% After Unloading';
+  $defaultOrder     = 'PO no later than 2 days before delivery';
+  $defaultShipping  = 'Free on Board (FOB) + Vessel/Barge Arrangement by Pro Energi';
+  $defaultQC        = 'Loading Port (Jetty Pro Energi) &mdash; by Surveyor and Representatives both sides';
+  $defaultTolerance = '1% of the total number of shipments';
+@endphp
+
+<div class="content">
+  <!-- Header -->
+
+  <br>
+  <table class="hdr">
+    <tr>
+      <td class="logo" style="width:55%">
+        <img src="{{ public_path('images/tds.png') }}" alt="Logo">
+      </td>
+      <td class="right" style="width:45%">
+        Jakarta, {{ $nowID }}
+      </td>
+    </tr>
+  </table>
+
+  <table class="refrow">
+    <tr>
+      <td class="refleft" style="width:60%">
+        No. Ref {{ $penawaran->nomor_penawaran }}
+      </td>
+      <td class="refright" style="width:40%">
+        Telp. {{ $penawaran->telepon ?? '+62 812-3456-7890' }}
+      </td>
+    </tr>
+  </table>
+
+  <!-- Attention -->
+  <table class="attnwrap">
+    <tr>
+      <td style="width:100%">
+        <div class="attn">
+          <strong>Attention to :</strong><br>
+          PT {{ $cust->nama_perusahaan ?? '-' }}<br>
+          {{ $cust->alamat_perusahaan ?? 'Alamat belum diisi' }}<br><br>
+
+          <strong>UP. <u>{{ $penawaran->nama ?? '-' }}</u></strong><br>
+          {{ $penawaran->jabatan ?? '-' }}
         </div>
+      </td>
+    </tr>
+  </table>
 
-        {{-- Info Penerima --}}
-        <div class="party-info">
-            Kepada Yth:<br>
-            <strong>PT. {{ $penawaran->customer->nama_perusahaan }}</strong><br>
-            {{ $penawaran->customer->alamat_perusahaan ?? 'Di Tempat' }}<br>
-            
-            <span style="display: inline-block; margin-top: 4px;"><u>Bp. Iwan</u> <br> Purchasing</span>
+  <!-- Subject -->
+  <div class="subject">Price Quotation of Crushed Stone</div>
 
-            <br>
-            
+  <!-- Intro -->
+  <p class="p">Dear Sir,</p>
+  <p class="p">
+    Together with this letter, please allow us introduce that we are from PT Tri Daya Selaras as a Legal Entity and have a Sales
+    Transportation Mining Business License from ESDM, which is engaged in Mining.
+  </p>
+  <p class="p">
+    With our experience, product assurance and resource, and facilities, we believe we are able to fulfill the needs of
+    Crushed Stone for <strong>{{ $cust->nama_perusahaan ?? '—' }}.</strong> Therefore, we would like to offer to your company:
+  </p>
+  <br>
+
+  <!-- 1–9: tanpa kotak -->
+  <div class="box">
+    <table class="kv">
+      <tr>
+        <td class="no">1.</td><td class="label"><b>Product</b></td><td class="colon">:</td>
+        <td class="value"><b>{!! $produkList ?: $defaultProduct !!}</b></td>
+      </tr>
+      {{-- <tr>
+        <td class="no">2.</td><td class="label"><b>Abrasion</b></td><td class="colon">:</td>
+        <td class="value"><b>{{ $penawaran->abrasion ?? '17%' }}</b></td>
+      </tr> --}}
+      <tr>
+        <td class="no">3.</td><td class="label"><b>Price per m&sup3;</b></td><td class="colon">:</td>
+        <td class="value">{{ $rupiah($hargaSatuan) }} <span style="color:#666">(Price exclude 11% VAT)</span></td>
+      </tr>
+      <tr>
+        <td class="no">4.</td><td class="label"><b>Payment Method</b></td><td class="colon">:</td>
+        <td class="value"><b>{{ $penawaran->termin_pembayaran ?? $defaultPayment }}</b></td>
+      </tr>
+      <tr>
+        <td class="no">5.</td><td class="label"><b>Ordering Method</b></td><td class="colon">:</td>
+        <td class="value">{{ $penawaran->order_method ?? $defaultOrder }}</td>
+      </tr>
+      <tr>
+        <td class="no">6.</td><td class="label"><b>Shipping Method</b></td><td class="colon">:</td>
+        <td class="value">
+          @if(($penawaran->keterangan ?? null) && strtoupper($penawaran->keterangan) !== 'FOB')
+            {{ strtoupper($penawaran->keterangan) }}
+          @else
+            {{ $defaultShipping }}
+          @endif
+        </td>
+      </tr>
+      <tr>
+        <td class="no">7.</td><td class="label"><b>Receiving Point & QC</b></td><td class="colon">:</td>
+        <td class="value">{!! $penawaran->receiving_point ?? $defaultQC !!}</td>
+      </tr>
+      <tr>
+        <td class="no">8.</td><td class="label"><b>Price due to</b></td><td class="colon">:</td>
+        <td class="value">{{ $due }}</td>
+      </tr>
+      <tr>
+        <td class="no">9.</td><td class="label"><b>Tolerance</b></td><td class="colon">:</td>
+        <td class="value">{{ $penawaran->toleransi_penyusutan ?? $defaultTolerance }} %</td>
+      </tr>
+    </table>
+  </div>
+  <br>
+
+  <!-- Closing -->
+  <p class="p">
+    Hopefully we can get the opportunity and trust from you to do the good business relationship with your company.
+    Thank you for your attention and cooperation
+  </p>
+  <br>
+
+  <!-- Signature + Contact -->
+  <table class="sigrow">
+    <tr>
+      <td style="width:55%;">
+        Best Regards,<br>
+        <strong>PT. Tri Daya Selaras</strong>
+        <div class="sp-sign"></div>
+        <strong>Vica Krisdianatha</strong><br>
+        Operation Manager
+      </td>
+      <td style="width:45%;">
+        <div class="contact">
+          <b>Contact person :</b>
+          <strong>{{ $penawaran->kontak_nama ?? 'Robby Pratama Putra' }}</strong><br>
+          Project Manager<br>
+          {{ $penawaran->kontak_telepon ?? '081190036943' }}<br>
+          {{ $penawaran->kontak_email ?? 'robby.pratama@proenergi.co.id' }}
         </div>
+      </td>
+    </tr>
+  </table>
 
-        <div class="party-info">
-        <span style="display: inline-block; margin-top: 0px;">Dear Sir,</span>
-        </div>
-        {{-- Intro --}}
-        <div class="intro-text">
-            Bersama surat ini, perkenankan kami untuk memperkenalkan, bahwa kami dari 
-            <strong>PT. Tri Daya Selaras</strong> sebagai badan usaha berbadan hukum dan memiliki izin transportasi,
-            bergerak di bidang transportasi tambang. Dengan pengalaman, jaminan produk, sumber daya,
-            serta sarana, kami percaya mampu untuk memenuhi kebutuhan untuk <strong>PT. {{ $penawaran->customer->nama_perusahaan }}</strong>.
-            Oleh karena itu, kami ingin menawarkan kepada perusahaan Bapak/Ibu rincian sebagai berikut:
-        </div>
+  <!-- Footer teks (di atas pita hijau) -->
+ 
+</div>
+<div class="brand-band"></div>
+<div class="footer">
+  PT. Tri Daya Selaras • Graha Irama Building 6th floor unit G, Jln. HR Rasuna Said Blok X1 Kav 1-2 •
+  Telp. +021 5289 2321 • Fax +021 5289 2310 • www.tridayaselaras.com
+</div>
 
-        {{-- Tabel Item --}}
-        <table class="item-table">
-            <thead>
-                <tr>
-                    <th style="width:5%;">No.</th>
-                    <th style="width:50%;">Produk</th>
-                    <th style="width:13%;">Volume</th>
-                    <th style="width:13%;">Harga</th>
-                    <th style="width:19%;">Jumlah Harga</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($penawaran->items as $idx => $item)
-                    <tr>
-                        <td>{{ $idx + 1 }}</td>
-                        <td style="text-align:left;">{{ $item->produk->nama_produk }}</td>
-                        <td>{{ number_format($item->volume_order, 0, ',', '.') }}</td>
-                        <td>Rp {{ number_format($item->harga_tebus, 0, ',', '.') }}</td>
-                        <td>Rp {{ number_format($item->jumlah_harga, 0, ',', '.') }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="4" style="text-align: right; font-weight: 600;">Subtotal</td>
-                    <td>Rp {{ number_format($penawaran->subtotal, 0, ',', '.') }}</td>
-                </tr>
-                <tr>
-                    <td colspan="4" style="text-align: right; font-weight: 600;">PPN 11%</td>
-                    <td>Rp {{ number_format($penawaran->ppn11, 0, ',', '.') }}</td>
-                </tr>
-                <tr>
-                    <td colspan="4" style="text-align: right; font-weight: 700; background: #f0f5f0;">Total Harga</td>
-                    <td style="font-weight: 700; background: #f0f5f0;">Rp {{ number_format($penawaran->total, 0, ',', '.') }}</td>
-                </tr>
-            </tfoot>
-        </table>
-
-
-        {{-- Syarat & Ketentuan --}}
-        <div style="border: 1px solid #c4d0c4; border-radius: 4px; padding: 8px 10px; margin-top: 15px; background-color: #f9fdf9; font-size: 11px;">
-            <strong style="color: #34623f; display: block; margin-bottom: 6px;">Syarat & Ketentuan</strong>
-            <ol style="padding-left: 15px; margin: 0;">
-                <li>Metode Pembayaran: CREDIT 30 Hari Setelah Invoice diterima</li>
-                <li>Metode Pemesanan: PO maksimal H-2 sebelum pengiriman</li>
-                <li>Metode Pengiriman: Setelah konfirmasi PO</li>
-                <li>Masa Berlaku Harga: 01 Juni 2025 s/d 14 Juni 2025</li>
-                <li>Toleransi: 0.5% dari total jumlah pengiriman</li>
-            </ol>
-        </div>
-
-        {{-- Penutup --}}
-        <div class="closing">
-            Demikian surat penawaran ini kami sampaikan. Kami sangat berharap dapat diberikan kesempatan dan 
-            kepercayaan kepada kami untuk dapat berbisnis dengan perusahaan Bapak/Ibu. 
-            Atas perhatian, pertimbangan, dan kerja sama yang baik, kami ucapkan terima kasih.
-        </div>
-
-        <div style="display: table; width: 100%; margin-top: 30px; font-size: 11px;">
-            {{-- Kolom TTD --}}
-            <div style="display: table-cell; width: 50%; vertical-align: top;">
-                <p>Hormat kami,</p>
-                <p><strong>PT. Tri Daya Selaras</strong></p>
-                <br><br><br><br> {{-- Spasi untuk tanda tangan --}}
-                <p><strong><u>Branch Manager</u></strong></p>
-            </div>
-        
-            {{-- Kolom Kontak Person --}}
-            <div style="display: table-cell; width: 50%; vertical-align: top;">
-                <div style="border: 1px solid #c4d0c4; border-radius: 4px; padding: 10px; background-color: #f9fdf9;">
-                    <p style="margin: 0 0 6px; color: #34623f;"><strong>Kontak Person</strong></p>
-                    <p style="margin: 2px 0;"><strong>Nama:</strong> {{ $penawaran->created_by ?? 'Nama Kontak' }}</p>
-                    <p style="margin: 2px 0;"><strong>Telepon:</strong> {{ $penawaran->kontak_telepon ?? '+628-123-456' }}</p>
-                    <p style="margin: 2px 0;"><strong>Email:</strong> {{ $penawaran->kontak_email ?? 'ikawati@proenergi.co.id' }}</p>
-                </div>
-            </div>
-        </div>
-        
-
-        {{-- Footer --}}
-        <div class="footer">
-            PT. Tri Daya Selaras &bull; Gedung Graha Irama Lantai 6 unit G, Jln. HR Rasuna Said Blok X1 Kav 1-2.
-             &bull; Telp. +021 5289 2321, Fax +021 5289 2310
-        </div>
-    </div>
 </body>
 </html>

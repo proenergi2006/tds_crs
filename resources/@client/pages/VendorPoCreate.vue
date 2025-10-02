@@ -276,7 +276,7 @@
   async function submit() {
     if (!form.id_vendor)   return Swal.fire('Error','Vendor wajib dipilih','error')
     if (!form.id_terminal) return Swal.fire('Error','Terminal wajib dipilih','error')
-    if (!form.nomor_po)    return Swal.fire('Error','Nomor PO wajib diisi','error')
+    //if (!form.nomor_po)    return Swal.fire('Error','Nomor PO wajib diisi','error')
   
     loading.value = true
     error.value   = ''

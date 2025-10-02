@@ -6,12 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Cabang extends Model
 {
-    // primary key custom
+    // Primary key custom
     protected $primaryKey = 'id_cabang';
 
-    // tidak pakai timestamps default
+    // Tidak pakai timestamps default
     public $timestamps = false;
 
+    // Kolom yang dapat diisi secara massal (fillable)
     protected $fillable = [
         'nama_cabang',
         'is_active',
@@ -19,5 +20,9 @@ class Cabang extends Model
         'created_by',
         'lastupdate_time',
         'lastupdate_by',
+        'inisial_cabang',   // Kolom baru
+        'inisial_segel',    // Kolom baru
+        'catatan_cabang', 
+        'no_po',  // Kolom baru
     ];
 }

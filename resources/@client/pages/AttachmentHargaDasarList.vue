@@ -2,14 +2,14 @@
     <div class="p-6 intro-y">
       <!-- Header & Add New -->
       <div class="flex items-center">
-        <h2 class="text-lg font-medium">Attachment Harga Dasar</h2>
-        <RouterLink
-          :to="{ name: 'attachment-harga-dasar-create' }"
-          class="ml-auto"
-        >
-          <Button variant="primary">Add New</Button>
-        </RouterLink>
-      </div>
+  <h2 class="text-lg font-medium">Master Attachment Harga Dasar</h2>
+  <RouterLink :to="{ name: 'attachment-harga-dasar-create' }" class="ml-auto">
+    <Button variant="primary" class="inline-flex items-center gap-2">
+      <Lucide icon="Plus" class="w-4 h-4" aria-hidden="true" />
+      <span>Tambah Data</span>
+    </Button>
+  </RouterLink>
+</div>
   
       <!-- Toolbar -->
       <div class="flex flex-wrap items-center mt-5 intro-y sm:flex-nowrap">

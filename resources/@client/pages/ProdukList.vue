@@ -1,12 +1,15 @@
 <template>
   <div class="p-6 intro-y">
-    <h2 class="text-lg font-medium">Produk</h2>
+    <h2 class="text-lg font-medium">Master Produk</h2>
 
     <!-- Toolbar -->
     <div class="flex flex-wrap items-center mt-5 intro-y sm:flex-nowrap">
       <RouterLink :to="{ name: 'produks-create' }">
-        <Button variant="primary">Add New Produk</Button>
-      </RouterLink>
+    <Button variant="primary" class="inline-flex items-center gap-2">
+      <Lucide icon="Plus" class="w-4 h-4" aria-hidden="true" />
+      <span>Tambah Produk</span>
+    </Button>
+  </RouterLink>
       <div class="mx-auto text-slate-500">
         Page {{ currentPage }} of {{ totalPages }}
       </div>
@@ -153,9 +156,10 @@ function confirmDelete(id: number) {
   produkToDelete = id;
   Swal.fire({
     title: 'Yakin ingin menghapus?',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonText: 'Hapus',
+  icon: 'warning',
+  showCancelButton: true,
+  confirmButtonText: '🗑️ Hapus',
+  cancelButtonText: '↩️ Batal',
   }).then(async (res) => {
     if (res.isConfirmed && produkToDelete) {
       await axios.delete(`/api/produks/${produkToDelete}`);

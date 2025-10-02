@@ -25,6 +25,29 @@ class OngkosKapalController extends Controller
     }
 }
 
+public function checkOA(Request $request)
+{
+    $request->validate([
+        'id_transportir' => 'required|numeric',
+        'id_angkut_wilayah' => 'required|numeric',
+        'id_volume' => 'required|numeric',
+    ]);
+
+    $ongkos = OngkosKapal::where('id_transportir', $request->id_transportir)
+        ->where('id_angkut_wilayah', $request->id_angkut_wilayah)
+        ->first();
+
+    if (!$ongkos) {
+        return response()->json(['oa' => 0]);
+    }
+
+    $detail = $ongkos->details()->where('id_volume', $request->id_volume)->first();
+
+    return response()->json([
+        'oa' => $detail?->oa ?? 0
+    ]);
+}
+
 
     public function store(Request $request)
     {

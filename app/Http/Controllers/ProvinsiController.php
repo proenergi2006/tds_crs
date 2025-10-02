@@ -17,6 +17,21 @@ class ProvinsiController extends Controller
         return response()->json($q->paginate($perPage));
     }
 
+    public function publicIndex(Request $request)
+    {
+        $q = Provinsi::query();
+
+        if ($s = trim((string) $request->query('q', ''))) {
+            // portable LIKE (PG/MySQL)
+            $q->whereRaw('LOWER(nama_provinsi) LIKE ?', ['%'.strtolower($s).'%']);
+        }
+
+        $rows = $q->orderBy('nama_provinsi')
+                  ->get(['id_provinsi as id', 'nama_provinsi as name']);
+
+        return response()->json(['data' => $rows]);
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([

@@ -18,6 +18,29 @@ const po = ref<any>({});
 const ceoSummary = ref('');
 const cfoSummary = ref('');
 
+// ===== T&C helper =====
+const termsList = computed<string[]>(() => {
+  const raw = po.value?.terms_condition;
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw.filter(Boolean);
+  }
+  if (typeof raw === 'string') {
+    // coba parse JSON array kalau kebetulan disimpan begitu
+    try {
+      const j = JSON.parse(raw);
+      if (Array.isArray(j)) return j.filter(Boolean);
+    } catch {}
+    // fallback: pecah per baris
+    return raw.replace(/\r\n/g, '\n')
+              .split('\n')
+              .map(s => s.trim())
+              .filter(Boolean);
+  }
+  return [];
+});
+const previewPdfUrl = computed(() => `/api/vendor-pos/${id}/preview`);
+
 async function fetchPo() {
   try {
     const { data } = await axios.get(`/api/vendor-pos/${id}`);
@@ -129,10 +152,12 @@ onMounted(fetchPo);
             </thead>
             <tbody>
               <tr v-for="item in po.produks" :key="item.id_po_produk" class="border-t hover:bg-slate-50">
-                <td class="px-4 py-2"> {{ item.produk?.nama_produk || '-' }} - Jenis :
-  {{ item.produk?.jenis?.nama || '-' }} 
-  ({{ item.produk?.ukuran?.nama_ukuran || '-' }} 
-  {{ item.produk?.ukuran?.satuan?.nama_satuan || '-' }})</td>
+                <td class="px-4 py-2">
+                  {{ item.produk?.nama_produk || '-' }} - Jenis :
+                  {{ item.produk?.jenis?.nama || '-' }}
+                  ({{ item.produk?.ukuran?.nama_ukuran || '-' }}
+                  {{ item.produk?.ukuran?.satuan?.nama_satuan || '-' }})
+                </td>
                 <td class="px-4 py-2 text-right">{{ formatCurrency(item.volume_po) }}</td>
                 <td class="px-4 py-2 text-right">{{ formatCurrency(item.harga_tebus) }}</td>
                 <td class="px-4 py-2 text-right">{{ formatCurrency(item.jumlah_harga) }}</td>
@@ -150,6 +175,30 @@ onMounted(fetchPo);
           <div><strong>Total Order:</strong> {{ formatCurrency(po.total_order) }}</div>
         </div>
       </div>
+
+      <!-- =============== T&C (Syarat & Ketentuan) =============== -->
+      <div class="bg-white shadow rounded-lg p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-medium">Syarat &amp; Ketentuan</h3>
+        
+        </div>
+
+        <!-- jika ada HTML full -->
+        <div v-if="po.terms_condition"
+             class="text-sm leading-relaxed space-y-2"
+             v-html="po.terms_condition">
+        </div>
+
+        <!-- fallback: list dari teks per baris -->
+        <ol v-else-if="termsList.length" class="list-decimal pl-6 space-y-2 text-sm">
+          <li v-for="(t, i) in termsList" :key="i">{{ t }}</li>
+        </ol>
+
+        <div v-else class="text-slate-500 text-sm">
+          Tidak ada syarat &amp; ketentuan.
+        </div>
+      </div>
+      <!-- ======================================================== -->
 
       <!-- CFO Input -->
       <div

@@ -1,11 +1,14 @@
 <template>
   <div class="p-6 intro-y">
     <div class="flex items-center">
-      <h2 class="text-lg font-medium">Kabupaten</h2>
-      <RouterLink :to="{ name: 'kabupatens-create' }" class="ml-auto">
-        <Button variant="primary">Add New Kabupaten</Button>
-      </RouterLink>
-    </div>
+  <h2 class="text-lg font-medium">Master Kabupaten</h2>
+  <RouterLink :to="{ name: 'kabupatens-create' }" class="ml-auto">
+    <Button variant="primary" class="inline-flex items-center gap-2">
+      <Lucide icon="Plus" class="w-4 h-4" aria-hidden="true" />
+      <span>Tambah Kabupaten</span>
+    </Button>
+  </RouterLink>
+</div>
 
     <!-- Toolbar: Search / PerPage / Filter Provinsi -->
     <div class="flex flex-wrap items-center mt-5 intro-y sm:flex-nowrap space-x-2">
