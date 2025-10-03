@@ -50,7 +50,9 @@ class Penawaran extends Model
         'bm_result',
         'bm_tanggal',
         'catatan_verifikasi',
-        'catatan_om'
+        'catatan_om',
+        'abrasi',
+        'user_id', // atau 'id_user' kalau pakai opsi B
     ];
 
     /******** Relasi ********/
@@ -71,6 +73,12 @@ class Penawaran extends Model
     public function items()
     {
         return $this->hasMany(PenawaranItem::class, 'id_penawaran', 'id_penawaran');
+    }
+
+    public function user()
+    {
+        // pakai foreign key user_id (kalau kamu pakai id_user, ganti argumennya)
+        return $this->belongsTo(\App\Models\User::class, 'user_id');
     }
 
     

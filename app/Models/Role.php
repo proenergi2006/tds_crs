@@ -19,4 +19,6 @@ class Role extends Model
         'lastupdate_time',
         'lastupdate_by',
     ];
+
+    
 }

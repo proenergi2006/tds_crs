@@ -17,6 +17,13 @@ use App\Mail\PenawaranNeedOmApprovalMail;       // notifikasi ke OM saat approve
 use App\Mail\PenawaranRejectedMail;             // notifikasi ke pembuat saat ditolak (BM/OM)
 use PDF;
 
+use BaconQrCode\Writer;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+
+
+
 class PenawaranController extends Controller
 {
     /** GET /api/penawarans */
@@ -64,9 +71,27 @@ class PenawaranController extends Controller
     /** GET /api/penawarans/{id}/preview */
     public function previewPdf($id)
     {
-        $penawaran = Penawaran::with(['customer', 'cabang', 'items.produk.ukuran'])
-            ->findOrFail($id);
-
+        $penawaran = Penawaran::with([
+            'customer', 'cabang', 'items.produk.ukuran', 'user.role'
+        ])->findOrFail($id);
+    
+        // Ambil user pemilik penawaran; fallback by created_by (nama)
+        $u = $penawaran->user;
+        if (!$u && !empty($penawaran->created_by)) {
+            $u = \App\Models\User::with('role')
+                ->where('name', $penawaran->created_by)
+                ->first();
+        }
+    
+        // Susun contact dengan null-safe
+        $contact = [
+            'name'  => $u?->name ?? ($penawaran->kontak_nama ?? 'Robby Pratama Putra'),
+            'role'  => $u?->role?->role_name ?? 'Project Manager',
+            // sesuaikan nama kolom telepon di users kamu (telepon/phone/no_hp)
+            'phone' => $u?->telepon ?? $u?->phone ?? $u?->no_hp ?? ($penawaran->kontak_telepon ?? '-'),
+            'email' => $u?->email ?? ($penawaran->kontak_email ?? '-'),
+        ];
+    
         $company = [
             'nama_perusahaan' => config('app.name'),
             'alamat'          => 'Alamat Perusahaan Anda',
@@ -74,34 +99,38 @@ class PenawaranController extends Controller
             'fax'             => '021-xxxxxxx',
             'logo_path'       => null,
         ];
-
-        $pdf = PDF::loadView('penawaran.pdf', compact('penawaran', 'company'))
+    
+        // PERBAIKI: kirim 'contact' (bukan 'contat')
+        $pdf = \PDF::loadView('penawaran.pdf', compact('penawaran', 'company', 'contact'))
             ->setPaper('A4', 'portrait');
-
-        $safeNomor = str_replace(['/', '\\'], '-', $penawaran->nomor_penawaran);
+    
+        $safeNomor = str_replace(['/', '\\'], '-', (string)$penawaran->nomor_penawaran);
         return $pdf->stream("Quotation-{$safeNomor}.pdf");
     }
+
+    
+
 
     /** GET /api/penawarans/{id}/preview-lub */
-    public function previewPdflub($id)
-    {
-        $penawaran = Penawaran::with(['customer', 'cabang', 'items.produk.ukuran'])
-            ->findOrFail($id);
+    // public function previewPdflub($id)
+    // {
+    //     $penawaran = Penawaran::with(['customer', 'cabang', 'items.produk.ukuran'])
+    //         ->findOrFail($id);
 
-        $company = [
-            'nama_perusahaan' => config('app.name'),
-            'alamat'          => 'Alamat Perusahaan Anda',
-            'telepon'         => '021-xxxxxxx',
-            'fax'             => '021-xxxxxxx',
-            'logo_path'       => null,
-        ];
+    //     $company = [
+    //         'nama_perusahaan' => config('app.name'),
+    //         'alamat'          => 'Alamat Perusahaan Anda',
+    //         'telepon'         => '021-xxxxxxx',
+    //         'fax'             => '021-xxxxxxx',
+    //         'logo_path'       => null,
+    //     ];
 
-        $pdf = PDF::loadView('penawaran.pdflub', compact('penawaran', 'company'))
-            ->setPaper('A4', 'portrait');
+    //     $pdf = PDF::loadView('penawaran.pdflub', compact('penawaran', 'company'))
+    //         ->setPaper('A4', 'portrait');
 
-        $safeNomor = str_replace(['/', '\\'], '-', $penawaran->nomor_penawaran);
-        return $pdf->stream("Quotation-{$safeNomor}.pdf");
-    }
+    //     $safeNomor = str_replace(['/', '\\'], '-', $penawaran->nomor_penawaran);
+    //     return $pdf->stream("Quotation-{$safeNomor}.pdf");
+    // }
 
     /** GET /api/penawarans/{id} */
     public function show($id)
@@ -147,12 +176,16 @@ class PenawaranController extends Controller
 'jabatan'  => 'nullable|string|max:255',
 'telepon'  => 'nullable|string|max:255',
 'alamat'   => 'nullable|string',
+'abrasi'  => 'nullable|numeric|min:0|max:100',
+'user_id' => 'nullable|exists:users,id',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
         $data = $validator->validated();
+
+        $data['user_id'] = $request->user()->id ?? ($data['user_id'] ?? null);
 
         // Nomor penawaran per cabang
         $cabang = Cabang::findOrFail($data['id_cabang']);
@@ -272,6 +305,8 @@ class PenawaranController extends Controller
 'jabatan'  => 'nullable|string|max:255',
 'telepon'  => 'nullable|string|max:255',
 'alamat'   => 'nullable|string',
+'abrasi'  => 'nullable|numeric|min:0|max:100',
+'user_id' => 'nullable|exists:users,id',
 
         ]);
 
@@ -279,6 +314,9 @@ class PenawaranController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
         $data = $validator->validated();
+
+        $data['user_id'] = $request->user()->id ?? ($data['user_id'] ?? null);
+
 
         $subtotal = 0.0;
         foreach ($data['items'] as $it) {
@@ -579,7 +617,23 @@ class PenawaranController extends Controller
 public function previewPdfMultiLang(Request $request, $id)
 {
     $lang = strtolower($request->query('lang', 'id')); // default: Indonesia
-    $penawaran = Penawaran::with(['customer', 'cabang', 'items.produk.ukuran'])->findOrFail($id);
+    $penawaran = Penawaran::with(['customer', 'cabang', 'items.produk.ukuran', 'user.role'])->findOrFail($id);
+
+    $u = $penawaran->user;
+    if (!$u && !empty($penawaran->created_by)) {
+        $u = \App\Models\User::with('role')
+            ->where('name', $penawaran->created_by)
+            ->first();
+    }
+
+       // Susun contact dengan null-safe
+       $contact = [
+        'name'  => $u?->name ?? ($penawaran->kontak_nama ?? 'Robby Pratama Putra'),
+        'role'  => $u?->role?->role_name ?? 'Project Manager',
+        // sesuaikan nama kolom telepon di users kamu (telepon/phone/no_hp)
+        'phone' => $u?->telepon ?? $u?->phone ?? $u?->no_hp ?? ($penawaran->kontak_telepon ?? '-'),
+        'email' => $u?->email ?? ($penawaran->kontak_email ?? '-'),
+    ];
 
     $company = [
         'nama_perusahaan' => config('app.name'),
@@ -602,11 +656,16 @@ public function previewPdfMultiLang(Request $request, $id)
         $view = $lang === 'en' ? 'penawaran.pdf_en' : 'penawaran.pdf_id';
     }
 
-    $pdf = \PDF::loadView($view, compact('penawaran', 'company'))->setPaper('A4', 'portrait');
+    $pdf = \PDF::loadView($view, compact('penawaran', 'company','contact'))->setPaper('A4', 'portrait');
 
     $safeNomor = str_replace(['/', '\\'], '-', $penawaran->nomor_penawaran);
     $suffix = $lang === 'en' ? 'EN' : 'ID';
     return $pdf->stream("Quotation-{$safeNomor}-{$suffix}.pdf");
 }
+
+
+
+
+
 
 }

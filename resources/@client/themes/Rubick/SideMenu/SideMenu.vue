@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import "@/assets/css/themes/rubick/side-nav.css";
 import { useRoute, useRouter } from "vue-router";
-import logoUrl from "@/assets/images/logo.svg";
+import logoUrl from "@/assets/images/logo.png";
 import Tippy from "@/components/Base/Tippy";
 import Lucide from "@/components/Base/Lucide";
 import TopBar from "@/components/Themes/Rubick/TopBar";
@@ -78,7 +78,7 @@ onMounted(() => {
             class="w-6"
             :src="logoUrl"
           />
-          <span class="hidden ml-3 text-lg text-white xl:block"> TDS </span>
+          <span class="hidden ml-3 text-lg text-white xl:block"> Tri Daya Selaras </span>
         </RouterLink>
         <div class="my-6 side-nav__divider"></div>
         <ul>

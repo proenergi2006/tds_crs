@@ -142,6 +142,8 @@
   border: none;
 }
 
+.qrwrap svg { width:28mm; height:28mm; display:block; }
+  .qr-text { margin-top:3px; font-size:9px; color:#555; }
 
   </style>
 </head>
@@ -151,9 +153,24 @@
   $nowID = \Carbon\Carbon::now()->translatedFormat('d F Y');
   $cust  = optional($penawaran->customer);
 
-  $produkList = $penawaran->items
-      ->map(fn($it) => optional($it->produk)->nama_produk)
-      ->filter()->unique()->implode(', ');
+ // Contoh output: "Batu Pecah — 2-3 m³, Batu Pecah — 3-5 m³"
+ $produkList = $penawaran->items
+      ->map(function($it){
+          $p  = $it->produk;
+          if (!$p) return null;
+          $uk = optional($p->ukuran);
+          $st = optional($uk->satuan);
+          // gabung ukuran + satuan bila ada
+          $ukTxt = trim(implode(' ', array_filter([
+              $uk->nama_ukuran ?? null,
+              $st->nama_satuan ?? null,
+          ])));
+          // "Nama Produk — 2-3 m³" atau hanya "Nama Produk" jika ukuran kosong
+          return trim($p->nama_produk . ($ukTxt ? ' — '.$ukTxt : ''));
+      })
+      ->filter()
+      ->unique()
+      ->implode(', ');
 
   $firstItem   = $penawaran->items->first();
   $hargaSatuan = $firstItem?->harga_tebus ?? 0;
@@ -236,10 +253,10 @@
         <td class="no">1.</td><td class="label"><b>Product</b></td><td class="colon">:</td>
         <td class="value"><b>{!! $produkList ?: $defaultProduct !!}</b></td>
       </tr>
-      {{-- <tr>
+      <tr>
         <td class="no">2.</td><td class="label"><b>Abrasion</b></td><td class="colon">:</td>
-        <td class="value"><b>{{ $penawaran->abrasion ?? '17%' }}</b></td>
-      </tr> --}}
+        <td class="value"><b>{{ $penawaran->abrasi ?? '0' }} %</b></td>
+      </tr>
       <tr>
         <td class="no">3.</td><td class="label"><b>Price per m&sup3;</b></td><td class="colon">:</td>
         <td class="value">{{ $rupiah($hargaSatuan) }} <span style="color:#666">(Price exclude 11% VAT)</span></td>
@@ -298,11 +315,12 @@
       <td style="width:45%;">
         <div class="contact">
           <b>Contact person :</b>
-          <strong>{{ $penawaran->kontak_nama ?? 'Robby Pratama Putra' }}</strong><br>
-          Project Manager<br>
-          {{ $penawaran->kontak_telepon ?? '081190036943' }}<br>
-          {{ $penawaran->kontak_email ?? 'robby.pratama@proenergi.co.id' }}
+          <strong>{{ $contact['name'] }}</strong><br>
+          {{ $contact['role'] }}<br>
+          {{ $contact['phone'] }}<br>
+          {{ $contact['email'] }}
         </div>
+        
       </td>
     </tr>
   </table>

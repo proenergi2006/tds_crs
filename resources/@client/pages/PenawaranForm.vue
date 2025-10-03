@@ -240,6 +240,27 @@
           </button>
         </div>
 
+       
+  <!-- ... yang sudah ada -->
+
+  <!-- Abrasi (%) -->
+  <div>
+    <label class="block text-sm font-medium mb-1">Abrasi (%)</label>
+    <div class="relative">
+      <input
+        v-model="form.abrasi"
+        @input="formatNumeric(form, 'abrasi', $event)"
+        type="text"
+        inputmode="numeric"
+        class="w-full border rounded p-2 pr-8 text-right"
+        :class="inputClass('abrasi')"
+        placeholder="0"
+      />
+      <span class="absolute right-3 top-2 text-gray-500">%</span>
+    </div>
+    <p class="text-xs text-slate-500 mt-1">Isi 0–100 (boleh kosong).</p>
+  </div>
+
         <!-- Diskon (Nominal) — SELALU TAMPIL -->
         <div class="mb-4">
           <label class="block text-sm font-medium mb-1">Diskon (Rp)</label>
@@ -411,6 +432,7 @@ nama: '' as string,
 jabatan: '' as string,
 telepon: '' as string,
 alamat: '' as string,
+abrasi: '' as string,
 });
 
 // ======== VALIDASI ========
@@ -456,6 +478,13 @@ function validateForm(): boolean {
   // dates
   if (!form.masa_berlaku)  { errors['masa_berlaku']  = true; msgs.push('Masa berlaku wajib diisi.'); }
   if (!form.sampai_dengan) { errors['sampai_dengan'] = true; msgs.push('Sampai dengan wajib diisi.'); }
+  if (form.abrasi) {
+    const ab = toFloat(form.abrasi);
+    if (isNaN(ab) || ab < 0 || ab > 100) {
+      errors['abrasi'] = true;
+      msgs.push('Abrasi harus 0–100.');
+    }
+  }
   if (form.masa_berlaku && form.sampai_dengan) {
     const mb = new Date(form.masa_berlaku as string).getTime();
     const sd = new Date(form.sampai_dengan as string).getTime();
@@ -703,6 +732,7 @@ nama: data.nama || '',
 jabatan: data.jabatan || '',
 telepon: data.telepon || '',
 alamat: data.alamat || '',
+abrasi: (data.abrasi ?? '').toString(),
     });
     form.items = data.items.map((it: any) => ({
       id_produk: it.id_produk,
@@ -750,6 +780,7 @@ nama: form.nama,
 jabatan: form.jabatan,
 telepon: form.telepon,
 alamat: form.alamat,
+abrasi: parseInt((form.abrasi || '0').replace(/\./g, ''), 10) || 0, 
 
 
       // total dihitung (meski harga di-hide)

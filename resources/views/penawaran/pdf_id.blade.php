@@ -114,6 +114,9 @@
       padding: 0;
       border: none;
     }
+   
+
+
   </style>
 </head>
 <body>
@@ -122,8 +125,22 @@
   $cust  = optional($penawaran->customer);
 
   $produkList = $penawaran->items
-      ->map(fn($it) => optional($it->produk)->nama_produk)
-      ->filter()->unique()->implode(', ');
+      ->map(function($it){
+          $p  = $it->produk;
+          if (!$p) return null;
+          $uk = optional($p->ukuran);
+          $st = optional($uk->satuan);
+          // gabung ukuran + satuan bila ada
+          $ukTxt = trim(implode(' ', array_filter([
+              $uk->nama_ukuran ?? null,
+              $st->nama_satuan ?? null,
+          ])));
+          // "Nama Produk — 2-3 m³" atau hanya "Nama Produk" jika ukuran kosong
+          return trim($p->nama_produk . ($ukTxt ? ' — '.$ukTxt : ''));
+      })
+      ->filter()
+      ->unique()
+      ->implode(', ');
 
   $firstItem   = $penawaran->items->first();
   $hargaSatuan = $firstItem?->harga_tebus ?? 0;
@@ -259,7 +276,7 @@
   <table class="sigrow">
     <tr>
       <td style="width:55%;">
-        Hormat kami,<br>
+        Best Regards,<br>
         <strong>PT. Tri Daya Selaras</strong>
         <div class="sp-sign"></div>
         <strong>Vica Krisdianatha</strong><br>
@@ -268,10 +285,10 @@
       <td style="width:45%;">
         <div class="contact">
           <b>Kontak :</b>
-          <strong>{{ $penawaran->kontak_nama ?? 'Robby Pratama Putra' }}</strong><br>
-          Project Manager<br>
-          {{ $penawaran->kontak_telepon ?? '081190036943' }}<br>
-          {{ $penawaran->kontak_email ?? 'robby.pratama@proenergi.co.id' }}
+          <strong>{{ $contact['name'] }}</strong><br>
+          {{ $contact['role'] }}<br>
+          {{ $contact['phone'] }}<br>
+          {{ $contact['email'] }}
         </div>
       </td>
     </tr>
