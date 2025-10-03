@@ -4,6 +4,7 @@ import Lucide from "@/components/Base/Lucide";
 import Breadcrumb from "@/components/Base/Breadcrumb";
 import { FormInput } from "@/components/Base/Form";
 import { Menu, Popover } from "@/components/Base/Headless";
+import logoUrll from "@/assets/images/logo-tds.png";
 import fakerData from "@/utils/faker";
 import _ from "lodash";
 import { TransitionRoot } from "@headlessui/vue";
@@ -190,10 +191,10 @@ async function onLogout() {
         >
           <div class="relative flex-none w-12 h-12 mr-1 image-fit">
             <img
-              alt="Midone Tailwind HTML Admin Template"
-              class="rounded-full"
-              :src="faker.photos[0]"
-            />
+            alt="Tinker Tailwind HTML Admin Template"
+            class="w-8"
+            :src="logoUrll"
+          />
             <div
               class="absolute bottom-0 right-0 w-3 h-3 border-2 border-white rounded-full bg-success dark:border-darkmode-600"
             ></div>
