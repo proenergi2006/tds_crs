@@ -14,6 +14,7 @@ class Penawaran extends Model
         'id_customer',
         'id_cabang',
         'nomor_penawaran',
+        'qr_code',
         'masa_berlaku',
         'sampai_dengan',
         'subtotal',

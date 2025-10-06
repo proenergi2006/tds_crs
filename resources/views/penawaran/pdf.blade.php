@@ -67,7 +67,7 @@
     .sigrow{ width:100%; border-collapse:collapse; margin-top:8px }
     .sigrow td{ vertical-align:top; padding-right:10px }
     .sigrow td:last-child{ padding-right:0 }
-    .sp-sign{ height:52px }
+    .sp-sign{ height:70px;}
     /* Kartu kontak dengan gradasi hijau */
 .contact{
   border: 1px solid #b7d7b7;       /* hijau muda */
@@ -142,8 +142,19 @@
   border: none;
 }
 
-.qrwrap svg { width:28mm; height:28mm; display:block; }
-  .qr-text { margin-top:3px; font-size:9px; color:#555; }
+
+  .content { position:relative; z-index:3; margin-bottom:28mm; }
+  .brand-band{ position:fixed; left:0; right:0; bottom:0; height:18mm; background:#57955a; z-index:1; }
+  .footer    { position:fixed; left:42mm; right:42mm; bottom:6mm; text-align:center; color:#fff; z-index:2; }
+  .wm        { z-index:0; }
+
+  .qrwrap{ text-align:left; margin-left:4mm; margin-top:6mm; }
+.qrimg{ width:18mm; height:18mm; display:inline-block; }
+.qrimg img{ width:18mm; height:18mm; display:block; }
+.qrimg svg{ width:18mm; height:18mm; display:block; }
+
+
+
 
   </style>
 </head>
@@ -308,10 +319,22 @@
       <td style="width:55%;">
         Best Regards,<br>
         <strong>PT. Tri Daya Selaras</strong>
-        <div class="sp-sign"></div>
+      
+        <div class="qrwrap">
+          {{-- <span class="qrimg">
+            @if(!empty($qrPathForPdf))
+              <img src="{{ $qrPathForPdf }}" alt="QR">
+            @elseif(!empty($qrInlineSvg))
+              {!! $qrInlineSvg !!}
+            @endif
+          </span> --}}
+        </div>
+      
+        <br>
         <strong>Vica Krisdianatha</strong><br>
         Operation Manager
       </td>
+      
       <td style="width:45%;">
         <div class="contact">
           <b>Contact person :</b>
@@ -321,9 +344,14 @@
           {{ $contact['email'] }}
         </div>
         
+        
       </td>
     </tr>
   </table>
+  {{-- Di bawah tanda tangan / di mana pun kamu mau --}}
+
+
+  
 
   <!-- Footer teks (di atas pita hijau) -->
  

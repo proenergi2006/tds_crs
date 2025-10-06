@@ -46,7 +46,8 @@ return [
          * Symbol, ZapfDingbats.
          */
         'font_dir' => storage_path('fonts'), // advised by dompdf (https://github.com/dompdf/dompdf/pull/782)
-
+        'isHtml5ParserEnabled' => true,
+        'isRemoteEnabled'      => true,
         /**
          * The location of the DOMPDF font cache directory
          *

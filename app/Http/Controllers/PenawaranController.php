@@ -16,11 +16,10 @@ use App\Mail\PenawaranSubmittedMail;            // notifikasi ke BM saat diajuka
 use App\Mail\PenawaranNeedOmApprovalMail;       // notifikasi ke OM saat approved BM
 use App\Mail\PenawaranRejectedMail;             // notifikasi ke pembuat saat ditolak (BM/OM)
 use PDF;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
-use BaconQrCode\Writer;
-use BaconQrCode\Renderer\ImageRenderer;
-use BaconQrCode\Renderer\RendererStyle\RendererStyle;
-use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 
 
 
@@ -68,45 +67,181 @@ class PenawaranController extends Controller
         return response()->json($data);
     }
 
-    /** GET /api/penawarans/{id}/preview */
-    public function previewPdf($id)
-    {
-        $penawaran = Penawaran::with([
-            'customer', 'cabang', 'items.produk.ukuran', 'user.role'
-        ])->findOrFail($id);
+   /** ============================ QR HELPERS ============================ */
+   
+   private function generateNumericCode(int $length = 8): string
+{
+    // contoh length 8 → range 10000000..99999999 (hindari leading zero)
+    $min = (int) str_pad('1', $length, '0');
+    $max = (int) str_pad('',  $length, '9');
+    return (string) random_int($min, $max);
+}
+
+
+   private function buildQrPayload(Penawaran $p): array
+   {
+       return [
+           'id'     => $p->id_penawaran ?? $p->id,
+           'nomor'  => (string) $p->nomor_penawaran,
+           'cust'   => optional($p->customer)->nama_perusahaan,
+           'valid'  => $p->sampai_dengan,
+           'verify' => $this->detailUrl($p->id_penawaran ?? $p->id),
+       ];
+   }
+
+   /** Simpan PNG ke storage/public/qrcodes/YYYY/mm/penawaran-<id>.png */
+//    private function saveQrPngToStorage(array $payload, int $idPenawaran): array
+//    {
+//        // pastikan simple-qrcode pakai GD, bukan Imagick
+//        config(['qrcode.image_backend' => 'gd']);
+
+//        $pngBinary = QrCode::format('png')
+//            ->size(512)->margin(0)->errorCorrection('M')
+//            ->generate(json_encode($payload, JSON_UNESCAPED_SLASHES));
+
+//        $dir = 'qrcodes/' . now()->format('Y/m');
+//        $safe = Str::slug("penawaran-{$idPenawaran}");
+//        $name = "{$safe}.png";
+
+//        Storage::disk('public')->put("$dir/$name", $pngBinary);
+
+//        $abs = public_path("storage/$dir/$name"); // path lokal absolut
+//        return [
+//            'abs_for_pdf' => 'file://' . $abs,        // dipakai dompdf
+//            'url'         => asset("storage/$dir/$name"), // untuk FE jika perlu
+//            'rel'         => "$dir/$name",
+//        ];
+//    }
+
+/** Simpan PNG ke storage/public/qrcodes/YYYY/mm/penawaran-<id>_<ts>.png */
+private function saveQrPngToStorage(string|array $payload, int $idPenawaran): array
+{
+    // pastikan simple-qrcode pakai GD, bukan Imagick
+    config(['qrcode.image_backend' => 'gd']);
+
+    // Jika array → jadikan JSON; jika string → pakai apa adanya
+    $data = is_array($payload)
+        ? json_encode($payload, JSON_UNESCAPED_SLASHES)
+        : (string) $payload;
+
+    $pngBinary = QrCode::format('png')
+        ->size(512)
+        ->margin(1)                 // beri margin tipis biar mudah dipindai
+        ->errorCorrection('M')
+        ->generate($data);
+
+    $dir  = 'qrcodes/' . now()->format('Y/m');
+    $safe = \Illuminate\Support\Str::slug("penawaran-{$idPenawaran}");
+    // pakai timestamp agar unik walau regenerate
+    $name = "{$safe}_" . now()->format('YmdHis') . ".png";
+
+    \Storage::disk('public')->put("$dir/$name", $pngBinary);
+
+    $abs = public_path("storage/$dir/$name"); // path lokal absolut
+    return [
+        'abs_for_pdf' => 'file://' . $abs,            // untuk dompdf/mpdf
+        'url'         => asset("storage/$dir/$name"), // untuk FE
+        'rel'         => "$dir/$name",
+    ];
+}
+
+
+  /** Simpan SVG ke storage (fallback) */
+private function saveQrSvgToStorage(string|array $payload, int $idPenawaran): array
+{
+    $data = is_array($payload)
+        ? json_encode($payload, JSON_UNESCAPED_SLASHES)
+        : (string) $payload;
+
+    $svg = QrCode::format('svg')
+        ->size(512)->margin(1)->errorCorrection('M')
+        ->generate($data);
+
+    $dir  = 'qrcodes/' . now()->format('Y/m');
+    $safe = \Illuminate\Support\Str::slug("penawaran-{$idPenawaran}");
+    $name = "{$safe}_" . now()->format('YmdHis') . ".svg";
+
+    \Storage::disk('public')->put("$dir/$name", $svg);
+
+    $abs = public_path("storage/$dir/$name");
+    return [
+        'abs_for_pdf' => 'file://' . $abs,
+        'url'         => asset("storage/$dir/$name"),
+        'rel'         => "$dir/$name",
+        'svg'         => $svg,
+    ];
+}
+
     
-        // Ambil user pemilik penawaran; fallback by created_by (nama)
-        $u = $penawaran->user;
-        if (!$u && !empty($penawaran->created_by)) {
-            $u = \App\Models\User::with('role')
-                ->where('name', $penawaran->created_by)
-                ->first();
-        }
-    
-        // Susun contact dengan null-safe
-        $contact = [
-            'name'  => $u?->name ?? ($penawaran->kontak_nama ?? 'Robby Pratama Putra'),
-            'role'  => $u?->role?->role_name ?? 'Project Manager',
-            // sesuaikan nama kolom telepon di users kamu (telepon/phone/no_hp)
-            'phone' => $u?->telepon ?? $u?->phone ?? $u?->no_hp ?? ($penawaran->kontak_telepon ?? '-'),
-            'email' => $u?->email ?? ($penawaran->kontak_email ?? '-'),
-        ];
-    
-        $company = [
-            'nama_perusahaan' => config('app.name'),
-            'alamat'          => 'Alamat Perusahaan Anda',
-            'telepon'         => '021-xxxxxxx',
-            'fax'             => '021-xxxxxxx',
-            'logo_path'       => null,
-        ];
-    
-        // PERBAIKI: kirim 'contact' (bukan 'contat')
-        $pdf = \PDF::loadView('penawaran.pdf', compact('penawaran', 'company', 'contact'))
-            ->setPaper('A4', 'portrait');
-    
-        $safeNomor = str_replace(['/', '\\'], '-', (string)$penawaran->nomor_penawaran);
-        return $pdf->stream("Quotation-{$safeNomor}.pdf");
-    }
+   public function previewPdf($id)
+   {
+       $penawaran = Penawaran::with([
+           'customer', 'cabang', 'items.produk.ukuran', 'user.role'
+       ])->findOrFail($id);
+
+       // contact card
+       $u = $penawaran->user ?: (
+           !empty($penawaran->created_by)
+               ? User::with('role')->where('name', $penawaran->created_by)->first()
+               : null
+       );
+
+       $contact = [
+           'name'  => $u?->name ?? ($penawaran->kontak_nama ?? 'Robby Pratama Putra'),
+           'role'  => $u?->role?->role_name ?? 'Project Manager',
+           'phone' => $u?->telepon ?? $u?->phone ?? $u?->no_hp ?? ($penawaran->kontak_telepon ?? '-'),
+           'email' => $u?->email ?? ($penawaran->kontak_email ?? '-'),
+       ];
+
+       $company = [
+           'nama_perusahaan' => config('app.name'),
+           'alamat'          => 'Alamat Perusahaan Anda',
+           'telepon'         => '021-xxxxxxx',
+           'fax'             => '021-xxxxxxx',
+           'logo_path'       => null,
+       ];
+
+       /** QR untuk dompdf: pakai file lokal jika ada; regenerate jika perlu */
+       $qrPathForPdf = null;   // file://...
+       $qrInlineSvg  = null;   // isi svg string (fallback terakhir)
+
+       if (!empty($penawaran->qr_code)) {
+           $parsed = parse_url($penawaran->qr_code, PHP_URL_PATH); // /storage/qrcodes/...png
+           if ($parsed && Str::startsWith($parsed, '/storage/')) {
+               $abs = public_path(ltrim($parsed, '/'));
+               if (is_file($abs)) {
+                   $qrPathForPdf = 'file://' . $abs;
+               }
+           }
+       }
+
+       if (!$qrPathForPdf) {
+           try {
+               $saved = $this->saveQrPngToStorage($this->buildQrPayload($penawaran), $penawaran->id_penawaran);
+               $qrPathForPdf = $saved['abs_for_pdf'];
+               // update kolom agar konsisten
+               $penawaran->forceFill(['qr_code' => $saved['url']])->save();
+           } catch (\Throwable $e) {
+               report($e);
+               // fallback SVG inline
+               $saved = $this->saveQrSvgToStorage($this->buildQrPayload($penawaran), $penawaran->id_penawaran);
+               $svg = preg_replace('/^<\?xml.*?\?>/i', '', $saved['svg']);
+               if (!preg_match('/\bwidth=|\bheight=/', $svg)) {
+                   $svg = preg_replace('/<svg\b/i', '<svg width="28mm" height="28mm"', $svg, 1);
+               }
+               $qrInlineSvg = $svg;
+               $penawaran->forceFill(['qr_code' => $saved['url']])->save();
+           }
+       }
+
+       $pdf = \PDF::loadView('penawaran.pdf', compact('penawaran', 'company', 'contact', 'qrPathForPdf', 'qrInlineSvg'))
+           ->setPaper('A4', 'portrait');
+
+       $safeNomor = str_replace(['/', '\\'], '-', (string) $penawaran->nomor_penawaran);
+       return $pdf->stream("Quotation-{$safeNomor}.pdf");
+   }
+
+
 
     
 
@@ -145,7 +280,6 @@ class PenawaranController extends Controller
         return response()->json($penawaran);
     }
 
-    /** POST /api/penawarans — DISKON = nominal rupiah */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -169,71 +303,60 @@ class PenawaranController extends Controller
             'catatan'              => 'nullable|string',
             'syarat_ketentuan'     => 'nullable|string',
             'discount'             => 'nullable|numeric|min:0',
-            'oat'                  => 'nullable|numeric|min:0', // per volume
+            'oat'                  => 'nullable|numeric|min:0',
             'jenis_penawaran'      => 'nullable|string|max:100',
             'kepada'   => 'nullable|string|max:255',
-'nama'     => 'nullable|string|max:255',
-'jabatan'  => 'nullable|string|max:255',
-'telepon'  => 'nullable|string|max:255',
-'alamat'   => 'nullable|string',
-'abrasi'  => 'nullable|numeric|min:0|max:100',
-'user_id' => 'nullable|exists:users,id',
+            'nama'     => 'nullable|string|max:255',
+            'jabatan'  => 'nullable|string|max:255',
+            'telepon'  => 'nullable|string|max:255',
+            'alamat'   => 'nullable|string',
+            'abrasi'   => 'nullable|numeric|min:0|max:100',
+            'user_id'  => 'nullable|exists:users,id',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
         $data = $validator->validated();
-
         $data['user_id'] = $request->user()->id ?? ($data['user_id'] ?? null);
 
-        // Nomor penawaran per cabang
+        // nomor penawaran per cabang
         $cabang = Cabang::findOrFail($data['id_cabang']);
-        $urutPenawaran    = (int) $cabang->urut_penawaran;
-        $newUrutPenawaran = $urutPenawaran + 1;
+        $urut  = (int) $cabang->urut_penawaran + 1;
+        $nomor = str_pad($urut, 5, '0', STR_PAD_LEFT)
+               . '/PE-PN/' . $cabang->inisial_cabang . '/' . $this->getRomanMonth(date('m')) . '/' . substr(date('Y'), -2);
+        $cabang->urut_penawaran = $urut; $cabang->save();
 
-        $bulanRomawi = $this->getRomanMonth(date('m'));
-        $tahun2Digit = substr(date('Y'), -2);
-
-        $nomorPenawaran = str_pad($newUrutPenawaran, 5, '0', STR_PAD_LEFT)
-            . '/PE-PN/' . $cabang->inisial_cabang . '/' . $bulanRomawi . '/' . $tahun2Digit;
-
-        $cabang->urut_penawaran = $newUrutPenawaran;
-        $cabang->save();
-
-        // Perhitungan
+        // hitung subtotal/diskon/ppn dll
         $subtotal = 0.0;
         foreach ($data['items'] as $it) {
             $subtotal += ((float)$it['volume_order']) * ((float)$it['harga_tebus']);
         }
-
         $diskon = $this->toFloat($data['discount'] ?? 0);
-        if ($diskon < 0) $diskon = 0.0;
-        if ($diskon > $subtotal) $diskon = $subtotal;
-
+        $diskon = max(0.0, min($diskon, $subtotal));
         $setelahDiskon = $subtotal - $diskon;
 
-        // OAT (per volume; tangani input "250,00"/"250.00")
-        $oatPerVolume = $this->toFloat($data['oat'] ?? 0);
-        $totalVolume  = array_sum(array_column($data['items'], 'volume_order'));
-        $totalOat     = $oatPerVolume * (float)$totalVolume;
+        $oatPerVol   = $this->toFloat($data['oat'] ?? 0);
+        $totalVolume = array_sum(array_column($data['items'], 'volume_order'));
+        $totalOat    = $oatPerVol * (float)$totalVolume;
 
         $ppn11 = round($setelahDiskon * 0.11, 2);
         $total = $setelahDiskon + $ppn11;
         $totalWithOat = $total + $totalOat;
 
-        // Simpan
-        $data['nomor_penawaran']            = $nomorPenawaran;
-        $data['subtotal']                   = $subtotal;
-        $data['harga_tebus_setelah_diskon'] = $setelahDiskon;
-        $data['ppn11']                      = $ppn11;
-        $data['total']                      = $total;
-        $data['total_with_oat']             = $totalWithOat;
-        $data['discount']                   = $diskon;      // nominal
-        $data['status']                     = 'draft';
-        $data['disposisi_penawaran']        = '1';
-        $data['created_at']                 = now();
-        $data['created_by']                 = optional($request->user())->name;
+        $data = array_merge($data, [
+            'nomor_penawaran'            => $nomor,
+            'subtotal'                   => $subtotal,
+            'harga_tebus_setelah_diskon' => $setelahDiskon,
+            'ppn11'                      => $ppn11,
+            'total'                      => $total,
+            'total_with_oat'             => $totalWithOat,
+            'discount'                   => $diskon,
+            'status'                     => 'draft',
+            'disposisi_penawaran'        => '1',
+            'created_at'                 => now(),
+            'created_by'                 => optional($request->user())->name,
+        ]);
 
         DB::beginTransaction();
         try {
@@ -249,6 +372,21 @@ class PenawaranController extends Controller
                 ]);
             }
 
+            // generate & simpan QR angka random (TANPA simpan token ke DB)
+$penawaran->refresh();
+$payloadNumber = $this->generateNumericCode(8); // ubah length kalau perlu
+
+try {
+    $saved = $this->saveQrPngToStorage($payloadNumber, $penawaran->id_penawaran);
+} catch (\Throwable $e) {
+    report($e);
+    $saved = $this->saveQrSvgToStorage($payloadNumber, $penawaran->id_penawaran);
+}
+
+$penawaran->forceFill(['qr_code' => $saved['url']])->save();
+
+
+            // update customer metadata (tidak mengganggu utama)
             DB::table('customers')
                 ->where('id_customer', $data['id_customer'])
                 ->update([
@@ -374,13 +512,56 @@ class PenawaranController extends Controller
         }
     }
 
-    /** DELETE /api/penawarans/{id} */
-    public function destroy($id)
-    {
-        $penawaran = Penawaran::findOrFail($id);
-        $penawaran->delete();
-        return response()->json(null, 204);
+    private function deleteQrFiles(int $idPenawaran, ?string $qrUrl = null): void
+{
+    // 1) Hapus file yang sekarang dipakai (dari kolom qr_code → URL /storage/…)
+    if (!empty($qrUrl)) {
+        $path = parse_url($qrUrl, PHP_URL_PATH); // contoh: /storage/qrcodes/2025/10/penawaran-123_20251006.png
+        if ($path && str_starts_with($path, '/storage/')) {
+            $rel = ltrim(substr($path, strlen('/storage/')), '/'); // qrcodes/2025/10/penawaran-123_....
+            \Storage::disk('public')->delete($rel);
+        }
     }
+
+    // 2) Sapu bersih file-file lama (jika pernah regenerate): penawaran-<id>_*.png/svg
+    $prefix = \Illuminate\Support\Str::slug("penawaran-{$idPenawaran}"); // sama seperti saat simpan
+    $all = \Storage::disk('public')->allFiles('qrcodes'); // jalan di subfolder Tahunan/Bulanan
+    foreach ($all as $file) {
+        $base = basename($file);
+        if (str_starts_with($base, $prefix) && (str_ends_with($base, '.png') || str_ends_with($base, '.svg'))) {
+            \Storage::disk('public')->delete($file);
+        }
+    }
+}
+
+
+public function destroy($id)
+{
+    $penawaran = Penawaran::findOrFail($id);
+
+    // simpan data yang dibutuhkan sebelum record dihapus
+    $idPenawaran = (int)($penawaran->id_penawaran ?? $penawaran->id);
+    $qrUrl = $penawaran->qr_code;
+
+    try {
+        $this->deleteQrFiles($idPenawaran, $qrUrl);
+    } catch (\Throwable $e) {
+        report($e); // kalau gagal hapus file, tetap lanjut hapus data
+    }
+
+    $penawaran->delete();
+
+    return response()->json(null, 204);
+}
+
+
+    /** DELETE /api/penawarans/{id} */
+    // public function destroy($id)
+    // {
+    //     $penawaran = Penawaran::findOrFail($id);
+    //     $penawaran->delete();
+    //     return response()->json(null, 204);
+    // }
 
     /** PATCH /api/penawarans/{id}/ajukan — kirim email ke BM */
     public function ajukan($id)
@@ -656,7 +837,43 @@ public function previewPdfMultiLang(Request $request, $id)
         $view = $lang === 'en' ? 'penawaran.pdf_en' : 'penawaran.pdf_id';
     }
 
-    $pdf = \PDF::loadView($view, compact('penawaran', 'company','contact'))->setPaper('A4', 'portrait');
+
+     /** QR untuk dompdf: pakai file lokal jika ada; regenerate jika perlu */
+     $qrPathForPdf = null;   // file://...
+     $qrInlineSvg  = null;   // isi svg string (fallback terakhir)
+
+     if (!empty($penawaran->qr_code)) {
+         $parsed = parse_url($penawaran->qr_code, PHP_URL_PATH); // /storage/qrcodes/...png
+         if ($parsed && Str::startsWith($parsed, '/storage/')) {
+             $abs = public_path(ltrim($parsed, '/'));
+             if (is_file($abs)) {
+                 $qrPathForPdf = 'file://' . $abs;
+             }
+         }
+     }
+
+     if (!$qrPathForPdf) {
+         try {
+             $saved = $this->saveQrPngToStorage($this->buildQrPayload($penawaran), $penawaran->id_penawaran);
+             $qrPathForPdf = $saved['abs_for_pdf'];
+             // update kolom agar konsisten
+             $penawaran->forceFill(['qr_code' => $saved['url']])->save();
+         } catch (\Throwable $e) {
+             report($e);
+             // fallback SVG inline
+             $saved = $this->saveQrSvgToStorage($this->buildQrPayload($penawaran), $penawaran->id_penawaran);
+             $svg = preg_replace('/^<\?xml.*?\?>/i', '', $saved['svg']);
+             if (!preg_match('/\bwidth=|\bheight=/', $svg)) {
+                 $svg = preg_replace('/<svg\b/i', '<svg width="28mm" height="28mm"', $svg, 1);
+             }
+             $qrInlineSvg = $svg;
+             $penawaran->forceFill(['qr_code' => $saved['url']])->save();
+         }
+     }
+
+
+
+    $pdf = \PDF::loadView($view, compact('penawaran', 'company','contact', 'qrPathForPdf', 'qrInlineSvg'))->setPaper('A4', 'portrait');
 
     $safeNomor = str_replace(['/', '\\'], '-', $penawaran->nomor_penawaran);
     $suffix = $lang === 'en' ? 'EN' : 'ID';

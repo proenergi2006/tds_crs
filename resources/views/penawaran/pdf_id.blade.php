@@ -114,7 +114,10 @@
       padding: 0;
       border: none;
     }
-   
+    .qrwrap{ text-align:left; margin-left:4mm; margin-top:6mm; }
+.qrimg{ width:18mm; height:18mm; display:inline-block; }
+.qrimg img{ width:18mm; height:18mm; display:block; }
+.qrimg svg{ width:18mm; height:18mm; display:block; }
 
 
   </style>
@@ -278,7 +281,18 @@
       <td style="width:55%;">
         Best Regards,<br>
         <strong>PT. Tri Daya Selaras</strong>
-        <div class="sp-sign"></div>
+      
+        <div class="qrwrap">
+          <span class="qrimg">
+            @if(!empty($qrPathForPdf))
+              <img src="{{ $qrPathForPdf }}" alt="QR">
+            @elseif(!empty($qrInlineSvg))
+              {!! $qrInlineSvg !!}
+            @endif
+          </span>
+        </div>
+      
+        <br>
         <strong>Vica Krisdianatha</strong><br>
         Operation Manager
       </td>
