@@ -15,18 +15,14 @@ class CustomerController extends Controller
     // GET /api/customers
     public function index(Request $request)
     {
-        // ambil user yang lagi login
+        // user yang login
         $userId = $request->user()->id;
-        
 
-        // App\Http\Controllers\CustomerController@index
-$q = Customer::query()
-->with(['user','provinsi','kabupaten','cabang'])
-->where('id_user', $userId)
-->withExists(['lcr as has_lcr'])
-->withCount(['penawarans as jumlah_penawaran']); // ← ini yang ngasih count
-
-        
+        $q = Customer::query()
+            ->with(['user','provinsi','kabupaten','cabang'])
+            ->where('id_user', $userId)
+            ->withExists(['lcr as has_lcr'])
+            ->withCount(['penawarans as jumlah_penawaran']);
 
         if ($s = $request->query('search')) {
             $q->where(function($q) use ($s) {
@@ -43,7 +39,7 @@ $q = Customer::query()
     public function store(Request $request)
     {
         $data = $request->validate([
-            'id_user'           => 'required|exists:users,id',
+            'id_user'           => 'sometimes|nullable|exists:users,id', // akan diabaikan
             'email'             => 'required|email|unique:customers,email',
             'id_provinsi'       => 'required|exists:provinsis,id_provinsi',
             'id_kabupaten'      => 'required|exists:kabupatens,id_kabupaten',
@@ -56,16 +52,18 @@ $q = Customer::query()
             'is_active'         => 'sometimes|boolean',
         ]);
 
+        // FORCE user login
+        $data['id_user']      = $request->user()->id;
         $data['created_time'] = now();
         $data['created_by']   = $request->user()->name;
 
         $customer = null;
 
         DB::transaction(function () use (&$customer, $data) {
-            // 1) buat customer utama
+            // 1) customer utama
             $customer = Customer::create($data);
 
-            // 2) seed tabel contact (PK = id_customer)
+            // 2) seed contact
             CustomerContact::firstOrCreate(
                 ['id_customer' => $customer->id_customer],
                 [
@@ -80,38 +78,37 @@ $q = Customer::query()
                 ]
             );
 
-            // 3) seed tabel logistik (banyak kolom NOT NULL → kasih default minimal)
+            // 3) seed logistik
             CustomerLogistik::firstOrCreate(
                 ['id_customer' => $customer->id_customer],
                 [
-                    'logistik_area'       => '',   // text NOT NULL
-                    'logistik_bisnis'     => '',   // text NOT NULL
+                    'logistik_area'       => '',
+                    'logistik_bisnis'     => '',
                     'logistik_env'        => 0,
                     'logistik_storage'    => 0,
                     'logistik_hour'       => 0,
                     'logistik_volume'     => 0,
                     'logistik_quality'    => 0,
                     'logistik_truck'      => 0,
-                    'desc_stor_fac'       => '',   // text NOT NULL
-                    'desc_condition'      => '',   // text NOT NULL
-                    // kolom lain yg nullable biarkan null (otomatis)
+                    'desc_stor_fac'       => '',
+                    'desc_condition'      => '',
                 ]
             );
 
-            // 4) seed tabel payment (beberapa kolom NOT NULL → default minimal)
+            // 4) seed payment
             CustomerPayment::firstOrCreate(
                 ['id_customer' => $customer->id_customer],
                 [
-                    'telp_billing'        => '',   // NOT NULL
-                    'fax_billing'         => '',   // NOT NULL
-                    'payment_schedule'    => 0,    // NOT NULL
-                    'payment_method'      => 0,    // NOT NULL
-                    'invoice'             => 0,    // NOT NULL
-                    'ket_extra'           => '',   // NOT NULL (text)
+                    'telp_billing'        => '',
+                    'fax_billing'         => '',
+                    'payment_schedule'    => 0,
+                    'payment_method'      => 0,
+                    'invoice'             => 0,
+                    'ket_extra'           => '',
                 ]
             );
 
-            // 5) seed admin_arnya (PK autoincrement → cukup id_customer)
+            // 5) seed admin_arnya
             CustomerAdminArnya::firstOrCreate(
                 ['id_customer' => $customer->id_customer],
                 [
@@ -129,10 +126,16 @@ $q = Customer::query()
     }
 
     // GET /api/customers/{id}
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $customer = Customer::with(['user', 'provinsi', 'kabupaten'])
                             ->findOrFail($id);
+
+        // (opsional) batasi akses
+        if ($customer->id_user !== $request->user()->id) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
         return response()->json($customer);
     }
 
@@ -140,7 +143,7 @@ $q = Customer::query()
     public function update(Request $request, $id)
     {
         $data = $request->validate([
-            'id_user'           => 'required|exists:users,id',
+            'id_user'           => 'sometimes|nullable|exists:users,id', // diabaikan
             'email'             => "required|email|unique:customers,email,{$id},id_customer",
             'id_provinsi'       => 'required|exists:provinsis,id_provinsi',
             'id_kabupaten'      => 'required|exists:kabupatens,id_kabupaten',
@@ -153,19 +156,34 @@ $q = Customer::query()
             'is_active'         => 'sometimes|boolean',
         ]);
 
+        $customer = Customer::findOrFail($id);
+
+        // ownership check (opsional tapi direkomendasikan)
+        if ($customer->id_user !== $request->user()->id) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        // FORCE user login
+        $data['id_user']         = $request->user()->id;
         $data['lastupdate_time'] = now();
         $data['lastupdate_by']   = $request->user()->name;
 
-        $customer = Customer::findOrFail($id);
         $customer->update($data);
 
         return response()->json($customer);
     }
 
     // DELETE /api/customers/{id}
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        Customer::destroy($id);
+        $customer = Customer::findOrFail($id);
+
+        // ownership check
+        if ($customer->id_user !== $request->user()->id) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $customer->delete();
         return response()->json(null, 204);
     }
 }

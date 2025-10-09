@@ -873,7 +873,7 @@ public function previewPdfMultiLang(Request $request, $id)
 
 
 
-    $pdf = \PDF::loadView($view, compact('penawaran', 'company','contact', 'qrPathForPdf', 'qrInlineSvg'))->setPaper('A4', 'portrait');
+    $pdf = \PDF::loadView($view, compact('penawaran', 'company','contact'))->setPaper('A4', 'portrait');
 
     $safeNomor = str_replace(['/', '\\'], '-', $penawaran->nomor_penawaran);
     $suffix = $lang === 'en' ? 'EN' : 'ID';

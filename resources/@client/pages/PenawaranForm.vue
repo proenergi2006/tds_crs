@@ -270,12 +270,18 @@
 
         <!-- OAT per Volume -->
         <div class="mb-4">
-          <label class="block text-sm font-medium mb-1">OAT per Volume</label>
-          <input :value="oatPerVolumeDisplay" readonly type="text"
-                 class="w-full border rounded p-2 text-right bg-gray-100"
-                 :class="inputClass('oat')" />
-          <input type="hidden" v-model="form.oat" />
-        </div>
+  <label class="block text-sm font-medium mb-1">OAT per Volume</label>
+  <input
+    v-model="form.oat"
+    @input="form.oat = formatDecimal(form.oat)"
+    type="text"
+    inputmode="decimal"
+    class="w-full border rounded p-2 text-right"
+    :class="inputClass('oat')"
+    placeholder="0"
+  />
+  <p class="text-xs text-slate-500 mt-1">Isi manual (contoh: 12500 atau 12.500)</p>
+</div>
 
         <!-- Meta lainnya -->
         <div class="grid grid-cols-3 gap-4">
@@ -395,6 +401,7 @@ const oaKapal = ref(0);
 const oaTruck = ref(0);
 const oaKapalInput = reactive({ id_transportir: '', id_angkut_wilayah: '', id_volume: '' });
 const oaTruckInput = reactive({ id_transportir: '', id_angkut_wilayah: '', id_volume: '' });
+const oatPerVolumeManual = computed(() => toNum(form.oat));
 
 interface ItemLine {
   id_produk: number | '';
@@ -467,6 +474,18 @@ function toFloat(v: string | number): number {
   return isNaN(n) ? 0 : n;
 }
 
+function toNum(v: string | number): number {
+  if (typeof v === 'number') return v;
+  const s = (v || '').toString().replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : 0;
+}
+function formatDecimal(v: string | number): string {
+  const n = toNum(v);
+  // tampilkan tanpa ribuan agar mudah edit; kalau mau ribuan, pakai toLocaleString
+  return n ? String(n) : '';
+}
+
 function validateForm(): boolean {
   clearErrors();
   const msgs: string[] = [];
@@ -524,7 +543,7 @@ function validateForm(): boolean {
 
   // OAT per volume (wajib > 0 bila bukan FOB)
   const metode = form.metode;
-  const oatNum = Number(oatPerVolume.value || 0);
+  const oatNum = Number(oatPerVolumeManual.value || 0);
   if (metode && metode !== 'FOB' && oatNum <= 0) {
     errors['oat'] = true;
     msgs.push('OAT per volume wajib terisi (> 0) untuk metode selain FOB.');
@@ -651,20 +670,21 @@ const grandTotalHargaTebusSetelahDiskon = computed(() =>
 );
 
 // OAT
-const oatPerVolume = computed(() => {
-  if (form.metode === 'FOB') return 0;
-  if (form.metode === 'CIF') return oaKapal.value || 0;
-  if (form.metode === 'DAP') return (oaKapal.value || 0) + (oaTruck.value || 0);
-  return 0;
-});
-const oatPerVolumeDisplay = computed(() =>
-  oatPerVolume.value.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
-);
-watch(oatPerVolume, (val) => {
-  form.oat = val.toString(); // untuk tampilan/hidden field
-});
+// const oatPerVolume = computed(() => {
+//   if (form.metode === 'FOB') return 0;
+//   if (form.metode === 'CIF') return oaKapal.value || 0;
+//   if (form.metode === 'DAP') return (oaKapal.value || 0) + (oaTruck.value || 0);
+//   return 0;
+// });
+// const oatPerVolumeDisplay = computed(() =>
+//   oatPerVolume.value.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+// );
+// watch(oatPerVolume, (val) => {
+//   form.oat = val.toString(); // untuk tampilan/hidden field
+// });
 
-const totalOAT = computed(() => (oatPerVolume.value || 0) * (totalVolumePO.value || 0));
+const totalOAT = computed(() => (oatPerVolumeManual.value || 0) * (totalVolumePO.value || 0));
+
 
 // PPN & Grand total
 const ppn11 = computed(() => Math.round(grandTotalHargaTebusSetelahDiskon.value * 0.11));
@@ -734,6 +754,8 @@ telepon: data.telepon || '',
 alamat: data.alamat || '',
 abrasi: (data.abrasi ?? '').toString(),
     });
+
+    form.oat = formatDecimal(data.oat ?? '');
     form.items = data.items.map((it: any) => ({
       id_produk: it.id_produk,
       volume_order: it.volume_order?.toLocaleString('id-ID') || '',
@@ -794,7 +816,7 @@ abrasi: parseInt((form.abrasi || '0').replace(/\./g, ''), 10) || 0,
       harga_tebus_setelah_diskon: grandTotalHargaTebusSetelahDiskon.value,
 
       // OAT per volume
-      oat: Number(oatPerVolume.value),
+      oat: Number(oatPerVolumeManual.value),
 
       pengiriman_via: form.pengiriman_via,
       jenis_penawaran: form.jenis_penawaran,

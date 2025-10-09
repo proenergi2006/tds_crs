@@ -4,7 +4,7 @@ import axios from 'axios'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: null as { name: string; email: string;  id_role: number;  two_factor_secret: string | null } | null,
+    user: null as { id:string;name: string; email: string;  id_role: number;  two_factor_secret: string | null } | null,
   }),
   actions: {
     async fetchUser() {

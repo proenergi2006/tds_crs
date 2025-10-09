@@ -215,44 +215,7 @@ const menu: Array<Menu | "divider"> = [
     pageName: "Master-Data",
     title: "Master-Data",
     subMenu: [
-      {
-        icon: "CreditCard",
-        pageName: "vendors-list",
-        title: "Vendor",
-      },
-      {
-        icon: "Terminal",
-        pageName: "terminals-list",
-        title: "Terminal",
-      },
 
-    ],
-  },
-
-
-  {
-    icon: "Database",
-    pageName: "Refrensi-Data",
-    title: "Refrensi Data",
-    subMenu: [
-      {
-        icon: "Building",
-        pageName: "cabang",
-        title: "Cabang",
-      },
-      
-      // {
-      //   icon: "CreditCard",
-      //   pageName: "vendors-list",
-      //   title: "Vendor",
-      // },
-      // {
-      //   icon: "Terminal",
-      //   pageName: "terminals-list",
-      //   title: "Terminal",
-      // },
-
-      
       {
         icon: "Archive",
         pageName: "products",
@@ -281,6 +244,75 @@ const menu: Array<Menu | "divider"> = [
           
         ],
       },
+      {
+        icon: "CreditCard",
+        pageName: "vendors-list",
+        title: "Vendor",
+      },
+      {
+        icon: "Terminal",
+        pageName: "terminals-list",
+        title: "Terminal",
+      },
+      
+
+    ],
+  },
+
+
+  {
+    icon: "Database",
+    pageName: "Refrensi-Data",
+    title: "Refrensi Data",
+    subMenu: [
+
+
+      {
+        icon: "Building",
+        pageName: "cabang",
+        title: "Cabang",
+      },
+      
+      // {
+      //   icon: "CreditCard",
+      //   pageName: "vendors-list",
+      //   title: "Vendor",
+      // },
+      // {
+      //   icon: "Terminal",
+      //   pageName: "terminals-list",
+      //   title: "Terminal",
+      // },
+      {
+        icon: "Archive",
+        pageName: "products",
+        title: "Master Produk",
+        subMenu: [
+          {
+            icon: "FileText",
+            pageName: "produks-list",
+            title: "Produk",
+          },
+          {
+            icon: "FileText",
+            pageName: "satuan",
+            title: "Satuan",
+          },
+          {
+            icon: "FileText",
+            pageName: "ukuran",
+            title: "Ukuran",
+          },
+          {
+            icon: "FileText",
+            pageName: "jenis-produk-list",
+            title: "Jenis",
+          },
+          
+        ],
+      },
+      
+     
       {
         icon: "Wallet",
         pageName: "Harga",

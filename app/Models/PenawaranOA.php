@@ -10,14 +10,15 @@ class PenawaranOA extends Model
     use HasFactory;
 
     protected $table = 'penawaran_oas';
+    public $timestamps = false; // tabel tidak punya created_at/updated_at
 
     protected $fillable = [
         'id_penawaran',
-        'tipe',
+        'tipe',                // 'kapal' | 'truck'
         'id_transportir',
         'id_angkut_wilayah',
         'id_volume',
-        'oa',
+        // 'oa', // aktifkan jika ada kolom nominal OA
     ];
 
     public function transportir()

@@ -1,3 +1,4 @@
+<!-- src/pages/CustomerCreate.vue -->
 <template>
   <div class="py-6 bg-slate-100 min-h-screen">
     <div class="intro-y grid grid-cols-12 gap-6 mt-8">
@@ -6,26 +7,27 @@
           <!-- Header -->
           <div class="flex items-center mb-4">
             <h2 class="text-lg font-medium">Tambah Customer</h2>
-           
           </div>
 
           <p v-if="error" class="text-red-500 mb-3">{{ error }}</p>
 
           <form @submit.prevent="submit" class="space-y-4">
-            <!-- 1. User -->
+            <!-- 1. User (readonly) -->
             <div>
-              <FormLabel for="user">User *</FormLabel>
+              <FormLabel for="user">User</FormLabel>
               <FormSelect
                 id="user"
                 ref="userRef"
                 v-model="form.id_user"
-                :class="{'border-rose-500': showErrors && !form.id_user}"
+                :disabled="true"
+                class="bg-slate-100 pointer-events-none"
               >
                 <option disabled value="">-- Pilih User --</option>
                 <option v-for="u in users" :key="u.id" :value="u.id">
                   {{ u.name }}
                 </option>
               </FormSelect>
+              <small class="text-slate-500">Otomatis sesuai user yang login</small>
             </div>
 
             <!-- 2. Email -->
@@ -169,7 +171,7 @@
 import { ref, reactive, onMounted, watch, nextTick } from 'vue'
 import axios from 'axios'
 import Swal from 'sweetalert2'
-import { useRouter, RouterLink } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 import { FormInput, FormSelect, FormLabel } from '@/components/Base/Form'
@@ -180,7 +182,7 @@ const router = useRouter()
 const auth   = useAuthStore()
 
 const form = reactive({
-  id_user:           '' as number | string,
+  id_user:           (auth.user?.id ?? '') as number | string,
   email:             '',
   id_provinsi:       '' as number | string,
   id_kabupaten:      '' as number | string,
@@ -201,18 +203,18 @@ const kabupatens = ref<any[]>([])
 const loading = ref(false)
 const error   = ref('')
 
-// refs untuk fokus
-const userRef      = ref<HTMLElement|null>(null)
+// refs
 const emailRef     = ref<HTMLInputElement|null>(null)
 const provinsiRef  = ref<HTMLElement|null>(null)
 const kabupatenRef = ref<HTMLElement|null>(null)
 const teleponRef   = ref<HTMLInputElement|null>(null)
 const jenisRef     = ref<HTMLElement|null>(null)
+const userRef      = ref<HTMLElement|null>(null)
 
 // data awal
 async function fetchUsers() {
-  const res = await axios.get('/api/users', { params: { per_page: 100 } })
-  users.value = res.data.data || res.data
+  // isi hanya user yang login supaya select tetap tampil
+  if (auth.user) users.value = [{ id: auth.user.id, name: auth.user.name }]
 }
 async function fetchProvinsis() {
   const res = await axios.get('/api/provinsis', { params: { per_page: 100 } })
@@ -228,7 +230,7 @@ watch(() => form.id_provinsi, async (newProv) => {
   const res = await axios.get('/api/kabupatens', {
     params: { id_provinsi: newProv, per_page: 100 }
   })
-  kabupatens.value = res.data.data
+  kabupatens.value = res.data.data || res.data
 })
 
 onMounted(async () => {
@@ -236,12 +238,12 @@ onMounted(async () => {
   await fetchProvinsis()
 })
 
-/* ===== VALIDASI SWEETALERT (tanpa required) ===== */
+/* ===== VALIDASI SWEETALERT ===== */
 const showErrors = ref(false)
 
 function missingFields(): string[] {
   const m: string[] = []
-  if (!form.id_user)        m.push('User')
+  // user tidak ikut validasi (auto dari sesi)
   if (!form.email.trim())   m.push('Email')
   if (!form.id_provinsi)    m.push('Provinsi')
   if (!form.id_kabupaten)   m.push('Kabupaten')
@@ -262,7 +264,6 @@ async function showMissingAlert(miss: string[]) {
 
 async function focusFirstMissing() {
   await nextTick()
-  if (!form.id_user && userRef.value)             return (userRef.value as HTMLSelectElement).focus()
   if (!form.email.trim() && emailRef.value)       return emailRef.value.focus()
   if (!form.id_provinsi && provinsiRef.value)     return (provinsiRef.value as HTMLSelectElement).focus()
   if (!form.id_kabupaten && kabupatenRef.value)   return (kabupatenRef.value as HTMLSelectElement).focus()
@@ -285,7 +286,7 @@ async function submit() {
   try {
     const payload = {
       ...form,
-      id_user:      Number(form.id_user),
+      id_user:      Number(form.id_user),      // tetap kirim, tapi server akan override
       id_provinsi:  Number(form.id_provinsi),
       id_kabupaten: Number(form.id_kabupaten),
     }
@@ -310,6 +311,7 @@ function cancel() { router.back() }
 </script>
 
 <style scoped>
-/* highlight merah saat invalid (tanpa required native) */
+/* highlight merah saat invalid */
 .border-rose-500 { box-shadow: 0 0 0 1px rgba(244, 63, 94, .6) inset; }
+.pointer-events-none { pointer-events: none; }
 </style>
