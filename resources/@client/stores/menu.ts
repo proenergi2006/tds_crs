@@ -44,7 +44,7 @@ export const useMenuStore = defineStore('menu', {
         if (typeof item !== 'string' && item.title === 'Access Control') {
           // hanya return true (tampilkan) jika roleId === 1
           return roleId === 1
-        }else if(typeof item !== 'string' && item.title === 'Refrensi Data' || item.title === 'Master Wilayah'){
+        }else if(typeof item !== 'string' && item.title === 'Refrensi Data'){
           return roleId === 2 
         }else if(typeof item !== 'string' && item.title === 'Inventory-Data' || item.title === 'Transactions-Data' || item.title === 'Master-Data'){
           return roleId === 5
@@ -56,7 +56,7 @@ export const useMenuStore = defineStore('menu', {
           return roleId === 4
         }else if(typeof item !== 'string' && item.title === 'Sales Confirmation' || item.title === 'Review Data Customer Admin'){
           return roleId === 9
-        }else if(typeof item !== 'string' && item.title === 'Sales Confirmation (BM)' || item.title === 'Verifikasi BM' || item.title === 'Review Customer BM'){
+        }else if(typeof item !== 'string' && item.title === 'Sales Confirmation (BM)' || item.title === 'Verifikasi BM' || item.title === 'Review Customer BM' || item.title === 'Master Wilayah'){
           return roleId === 8
         }else if(typeof item !== 'string' && item.title === 'Verifikasi'){
           return roleId === 2 || roleId === 3
