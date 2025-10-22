@@ -163,7 +163,8 @@
   $defaultPayment   = '50% After Barge Reached Jetty MBL; 50% After Unloading';
   $defaultOrder     = 'PO no later than 2 days before delivery';
   $defaultShipping  = 'Free on Board (FOB) + Vessel/Barge Arrangement by Pro Energi';
-  $defaultQC        = 'Loading Port (Jetty Pro Energi) &mdash; by Surveyor and Representatives both sides';
+  $defaultQC        = 'Loading Port (Jetty TDS) – by Surveyor and Representatives both
+Sides.  &mdash; Once get QC clearance, barge will depart to Discharge Port';
   $defaultTolerance = '1% of the total number of shipments';
 @endphp
 
@@ -231,10 +232,10 @@
         <td class="no">1.</td><td class="label"><b>Product</b></td><td class="colon">:</td>
         <td class="value"><b>{!! $produkList ?: $defaultProduct !!}</b></td>
       </tr>
-      {{-- <tr>
+      <tr>
         <td class="no">2.</td><td class="label"><b>Abrasion</b></td><td class="colon">:</td>
-        <td class="value"><b>{{ $penawaran->abrasion ?? '17%' }}</b></td>
-      </tr> --}}
+        <td class="value"><b>{{ $penawaran->abrasi ?? '0%' }} %</b></td>
+      </tr>
       <tr>
         <td class="no">3.</td><td class="label"><b>Price per m&sup3;</b></td><td class="colon">:</td>
         <td class="value">{{ $rupiah($hargaSatuan) }} <span style="color:#666">(Price exclude 11% VAT)</span></td>
@@ -248,7 +249,7 @@
         <td class="value">{{ $penawaran->order_method ?? $defaultOrder }}</td>
       </tr>
       <tr>
-        <td class="no">6.</td><td class="label"><b>Shipping Method</b></td><td class="colon">:</td>
+        <td class="no">6.</td><td class="label"><b>Delivery Method</b></td><td class="colon">:</td>
         <td class="value">
           @if(($penawaran->keterangan ?? null) && strtoupper($penawaran->keterangan) !== 'FOB')
             {{ strtoupper($penawaran->keterangan) }}

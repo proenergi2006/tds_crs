@@ -32,7 +32,8 @@ class PenawaranController extends Controller
         $search  = $request->query('search');
 
         $query = Penawaran::with(['customer', 'cabang', 'items.produk'])
-            ->withSum('items as total_volume', 'volume_order');
+            ->withSum('items as total_volume', 'volume_order')
+            ->where('user_id', optional($request->user())->id);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -324,7 +325,7 @@ private function saveQrSvgToStorage(string|array $payload, int $idPenawaran): ar
         $cabang = Cabang::findOrFail($data['id_cabang']);
         $urut  = (int) $cabang->urut_penawaran + 1;
         $nomor = str_pad($urut, 5, '0', STR_PAD_LEFT)
-               . '/PE-PN/' . $cabang->inisial_cabang . '/' . $this->getRomanMonth(date('m')) . '/' . substr(date('Y'), -2);
+               . '/TDS-PN/' . $cabang->inisial_cabang . '/' . $this->getRomanMonth(date('m')) . '/' . substr(date('Y'), -2);
         $cabang->urut_penawaran = $urut; $cabang->save();
 
         // hitung subtotal/diskon/ppn dll

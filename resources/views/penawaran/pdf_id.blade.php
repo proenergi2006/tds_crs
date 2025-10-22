@@ -159,7 +159,7 @@
   $defaultPayment   = '50% setelah tongkang sampai di Jetty MBL; 50% setelah pembongkaran';
   $defaultOrder     = 'PO maksimal 2 hari sebelum pengiriman';
   $defaultShipping  = 'Free On Board (FOB) + Pengaturan Kapal/Tongkang oleh Pro Energi';
-  $defaultQC        = 'Pelabuhan Muat (Jetty Pro Energi) — oleh Surveyor dan Perwakilan kedua belah pihak';
+  $defaultQC        = 'Pelabuhan Muat (Jetty TDS) — oleh Surveyor dan Perwakilan kedua belah pihak';
   $defaultTolerance = '1% dari total jumlah pengiriman';
 @endphp
 
@@ -226,10 +226,10 @@
         <td class="no">1.</td><td class="label"><b>Produk</b></td><td class="colon">:</td>
         <td class="value"><b>{!! $produkList ?: $defaultProduct !!}</b></td>
       </tr>
-      {{-- <tr>
+      <tr>
         <td class="no">2.</td><td class="label"><b>Abrasi</b></td><td class="colon">:</td>
-        <td class="value"><b>{{ $penawaran->abrasion ?? '17%' }}</b></td>
-      </tr> --}}
+        <td class="value"><b>{{ $penawaran->abrasi ?? '0' }} %</b></td>
+      </tr>
       <tr>
         <td class="no">3.</td><td class="label"><b>Harga per m&sup3;</b></td><td class="colon">:</td>
         <td class="value">{{ $rupiah($hargaSatuan) }} <span style="color:#666">(Harga belum termasuk PPN 11%)</span></td>

@@ -281,7 +281,7 @@
         <td class="value">{{ $penawaran->order_method ?? $defaultOrder }}</td>
       </tr>
       <tr>
-        <td class="no">6.</td><td class="label"><b>Shipping Method</b></td><td class="colon">:</td>
+        <td class="no">6.</td><td class="label"><b>Delivery Method</b></td><td class="colon">:</td>
         <td class="value">
           @if(($penawaran->keterangan ?? null) && strtoupper($penawaran->keterangan) !== 'FOB')
             {{ strtoupper($penawaran->keterangan) }}
