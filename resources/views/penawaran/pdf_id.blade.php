@@ -210,7 +210,7 @@
   <!-- Intro -->
   <p class="p">Yth. Bapak/Ibu,</p>
   <p class="p">
-    Bersama surat ini, perkenankan kami memperkenalkan bahwa kami dari PT Tri Daya Selaras sebagai Badan Hukum yang memiliki
+    Bersama surat ini, perkenankan kami memperkenalkan bahwa kami dari PT Tri Daya Selaras (Perusahaan afiliasi dari PT Pro Energi ) sebagai Badan Hukum yang memiliki
     Izin Usaha Penjualan & Jasa Pertambangan dari ESDM, bergerak di bidang pertambangan.
   </p>
   <p class="p">

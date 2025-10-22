@@ -248,7 +248,7 @@
   <!-- Intro -->
   <p class="p">Dear Sir,</p>
   <p class="p">
-    Together with this letter, please allow us introduce that we are from PT Tri Daya Selaras as a Legal Entity and have a Sales
+    Together with this letter, please allow us introduce that we are from PT Tri Daya Selaras (An affiliated company of PT Pro Energi) as a Legal Entity and have a Sales
     Transportation Mining Business License from ESDM, which is engaged in Mining.
   </p>
   <p class="p">
