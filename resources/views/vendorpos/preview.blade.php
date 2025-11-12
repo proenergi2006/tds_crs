@@ -82,6 +82,21 @@
 .name{ font-weight:700; padding-top:4mm }
 .role{ font-size:10px }
 .t-right{ text-align:right }
+.terms ol {
+  counter-reset: item;
+}
+.terms li {
+  line-height: 1.55;
+  text-align: justify;
+  margin-bottom: 4mm;
+}
+.terms-title {
+  text-align: center;
+  font-weight: 700;
+  margin: 8mm 0 5mm;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+}
 
   </style>
 </head>
@@ -241,7 +256,7 @@
   </table>
 </div>
 
-<div class="page-footer">
+{{-- <div class="page-footer">
   <div class="inner">
     <div class="addr">
       <div class="brand">Tri Daya Selaras</div>
@@ -254,7 +269,7 @@
       <div>{{ config('company.website', 'www.tridayaselaras.com') }}</div>
     </div>
   </div>
-</div>
+</div> --}}
 
 <!-- ======================== HALAMAN 2 (TERMS) ======================== -->
 <div class="page-break"></div>
@@ -280,11 +295,19 @@
 
   <h3 class="terms-title">Syarat &amp; Ketentuan Pembelian</h3>
 
-  <div class="terms">
-    <ol>
-      <li>{{ $po->terms_condition ?? '' }}</li>
-      
-    </ol>
+  <div class="terms" style="margin-top: 2mm; text-align: justify; line-height: 1.55;">
+    @php
+      $terms = $po->terms_condition ?? '';
+      $lines = preg_split("/\r\n|\n|\r/", trim($terms));
+    @endphp
+  
+    @foreach($lines as $line)
+      @if(trim($line) !== '')
+        <div style="margin-bottom: 3mm; text-align: justify; width:100%; display:block;">
+          {{ ltrim($line) }}
+        </div>
+      @endif
+    @endforeach
   </div>
 
   <table class="sig-table">
@@ -314,10 +337,7 @@
   
   </div>
 
-  <div class="tiny-note">
-    (This form is valid with sign by computerized system)<br>
-    Printed by {{ auth()->user()->name ?? 'system' }} {{ now()->format('d/m/Y H:i:s') }} WIB
-  </div>
+ 
 </div>
 </body>
 </html>
