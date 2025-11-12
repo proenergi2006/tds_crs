@@ -256,7 +256,7 @@
   </table>
 </div>
 
-{{-- <div class="page-footer">
+<div class="page-footer">
   <div class="inner">
     <div class="addr">
       <div class="brand">Tri Daya Selaras</div>
@@ -269,7 +269,7 @@
       <div>{{ config('company.website', 'www.tridayaselaras.com') }}</div>
     </div>
   </div>
-</div> --}}
+</div>
 
 <!-- ======================== HALAMAN 2 (TERMS) ======================== -->
 <div class="page-break"></div>
@@ -300,7 +300,7 @@
       $terms = $po->terms_condition ?? '';
       $lines = preg_split("/\r\n|\n|\r/", trim($terms));
     @endphp
-  
+
     @foreach($lines as $line)
       @if(trim($line) !== '')
         <div style="margin-bottom: 3mm; text-align: justify; width:100%; display:block;">
@@ -337,7 +337,10 @@
   
   </div>
 
- 
+  <div class="tiny-note">
+    (This form is valid with sign by computerized system)<br>
+    Printed by {{ auth()->user()->name ?? 'system' }} {{ now()->format('d/m/Y H:i:s') }} WIB
+  </div>
 </div>
 </body>
 </html>
