@@ -256,7 +256,7 @@
   </table>
 </div>
 
-<div class="page-footer">
+{{-- <div class="page-footer">
   <div class="inner">
     <div class="addr">
       <div class="brand">Tri Daya Selaras</div>
@@ -269,7 +269,7 @@
       <div>{{ config('company.website', 'www.tridayaselaras.com') }}</div>
     </div>
   </div>
-</div>
+</div> --}}
 
 <!-- ======================== HALAMAN 2 (TERMS) ======================== -->
 <div class="page-break"></div>
