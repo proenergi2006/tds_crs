@@ -85,6 +85,7 @@
           <FormSelect v-model="form.metode" class="w-full" :class="inputClass('metode')">
             <option value="" disabled>Pilih…</option>
             <option value="FOB">Free On Board</option>
+            <option value="FOT">Free On Truck</option>
             <option value="CIF">Cost Insurance & Freight</option>
             <option value="DAP">Delivery At Place</option>
           </FormSelect>
@@ -125,7 +126,7 @@
         </div>
 
         <!-- OA Truck (DAP) -->
-        <div v-if="form.metode === 'DAP'" class="bg-slate-100 p-4 rounded mb-4">
+        <div v-if="form.metode === 'DAP' || form.metode === 'FOT'" class="bg-slate-100 p-4 rounded mb-4">
           <h4 class="text-sm font-semibold mb-2">Ongkos Truck</h4>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>

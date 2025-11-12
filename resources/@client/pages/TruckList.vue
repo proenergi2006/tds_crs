@@ -23,7 +23,6 @@
           <thead class="bg-slate-50">
             <tr>
               <th class="px-4 py-2">No</th>
-              <th class="px-4 py-2">Nama</th>
               <th class="px-4 py-2">Plat Nomor</th>
               <th class="px-4 py-2">Kapasitas</th>
               <th class="px-4 py-2">Transportir</th>
@@ -34,7 +33,7 @@
           <tbody>
             <tr v-for="(item, idx) in items" :key="item.id" class="hover:bg-slate-100">
               <td class="px-4 py-2">{{ (currentPage - 1) * perPage + idx + 1 }}</td>
-              <td class="px-4 py-2">{{ item.nama_truck }}</td>
+            
               <td class="px-4 py-2">{{ item.nopol }}</td>
               <td class="px-4 py-2">{{ item.kapasitas }} KL</td>
               <td class="px-4 py-2">{{ item.transportir?.nama_perusahaan || '-' }}</td>

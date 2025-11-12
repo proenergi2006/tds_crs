@@ -96,6 +96,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('ukurans', UkuranController::class);
     Route::apiResource('produks', ProdukController::class);
     Route::apiResource('produk-hargas', ProdukHargaController::class);
+    Route::post('/produk-hargas/add-margin', [ProdukHargaController::class, 'addMargin']);
+
     Route::apiResource('attachment-harga-dasar', AttachmentHargaDasarController::class);
     Route::apiResource('provinsis', ProvinsiController::class);
     Route::apiResource('kabupatens', KabupatenController::class);

@@ -44,6 +44,10 @@
               <label class="block text-sm font-medium mb-1">OA (Rp)</label>
               <FormInput v-model="d.oa" type="number" placeholder="Ongkos Angkut" />
             </div>
+            <div class="mt-4">
+  <label class="block text-sm font-medium mb-1">Catatan</label>
+  <FormInput v-model="form.catatan" type="text" placeholder="Tulis catatan tambahan..." />
+</div>
             <div>
               <button type="button" class="text-red-600 mt-2" @click="removeDetail(i)">Hapus</button>
             </div>
@@ -80,6 +84,7 @@
   const form = reactive({
     id_transportir: '',
     id_angkut_wilayah: '',
+    catatan: '',
     details: [{ id_volume: '', oa: '' }]
   })
   
@@ -131,6 +136,7 @@
       Object.assign(form, {
         id_transportir: data.id_transportir,
         id_angkut_wilayah: data.id_angkut_wilayah,
+        catatan: data.catatan || '',
         details: data.details || []
       })
     }

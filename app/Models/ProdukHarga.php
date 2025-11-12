@@ -16,6 +16,7 @@ class ProdukHarga extends Model
         'id_produk',
         'harga_price_list',
         'harga_bm',
+        'margin',
         'catatan',
         'created_time',
         'created_by',

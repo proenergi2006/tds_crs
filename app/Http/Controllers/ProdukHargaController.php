@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\ProdukHarga;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
 
 class ProdukHargaController extends Controller
 {
@@ -98,4 +100,37 @@ class ProdukHargaController extends Controller
         ProdukHarga::destroy($id);
         return response()->json(null, 204);
     }
+
+    public function addMargin(Request $request)
+{
+    $validated = $request->validate([
+        'id_cabang'      => 'required|exists:cabangs,id_cabang',
+        'id_produk'      => 'required|exists:produks,id_produk',
+        'periode_awal'   => 'required|date',
+        'periode_akhir'  => 'required|date|after_or_equal:periode_awal',
+        'margin'         => 'required|numeric|min:0',
+    ]);
+
+    $affected = ProdukHarga::where('id_cabang', $validated['id_cabang'])
+        ->where('id_produk', $validated['id_produk'])
+        ->whereBetween('periode_awal', [$validated['periode_awal'], $validated['periode_akhir']])
+        ->get();
+
+    if ($affected->isEmpty()) {
+        return response()->json(['message' => 'Tidak ada data harga yang cocok.'], 404);
+    }
+
+    foreach ($affected as $harga) {
+        $harga->harga_price_list += $validated['margin'];
+        $harga->harga_bm         += $validated['margin'];
+        if (Schema::hasColumn('produk_hargas', 'margin')) {
+            $harga->margin += $validated['margin'];
+        }
+        $harga->save();
+    }
+
+    return response()->json([
+        'message' => 'Margin berhasil diterapkan ke ' . $affected->count() . ' data.',
+    ]);
+}
 }

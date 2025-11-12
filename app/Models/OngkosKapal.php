@@ -10,6 +10,7 @@ class OngkosKapal extends Model
     protected $fillable = [
         'id_transportir',
         'id_angkut_wilayah',
+        'catatan',
         'created_by',
         'updated_by'
     ];

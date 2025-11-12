@@ -3,10 +3,7 @@
       <h2 class="text-xl font-bold mb-4">{{ isEdit ? 'Edit' : 'Tambah' }} Truck</h2>
       <form @submit.prevent="submit">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium mb-1">Nama Truck *</label>
-            <FormInput v-model="form.nama_truck" placeholder="Nama Truck" />
-          </div>
+         
           <div>
             <label class="block text-sm font-medium mb-1">Plat Nomor *</label>
             <FormInput v-model="form.nopol" placeholder="Contoh: B 1234 CD" />
@@ -69,7 +66,7 @@
   const transportirs = ref<any[]>([])
   
   const form = reactive({
-    nama_truck: '',
+   
     nopol: '',
     jenis_truck: '',
     kapasitas: '',
@@ -95,7 +92,7 @@
   }
   
   async function submit() {
-    if (!form.nama_truck || !form.nopol || !form.id_transportir) {
+    if (!form.nopol || !form.id_transportir) {
       return Swal.fire('Peringatan', 'Nama, Plat Nomor, dan Transportir wajib diisi', 'warning')
     }
   

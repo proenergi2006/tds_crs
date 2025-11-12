@@ -12,6 +12,10 @@
       <span>Tambah Harga</span>
     </Button>
   </RouterLink>
+
+  <Button variant="outline-primary" class="ml-3" @click="openMarginModal">
+  <Lucide icon="Percent" class="w-4 h-4" /> Tambah Margin
+</Button>
 </div>
 
     <!-- Toolbar -->
@@ -147,15 +151,101 @@
       </Pagination>
     </div>
   </div>
+<!-- Modal Tambah Margin -->
+<Dialog :open="showMarginModal" @close="showMarginModal = false">
+  <Dialog.Panel class="p-6 w-[420px]">
+    <Dialog.Title class="text-lg font-semibold mb-4 border-b pb-2">
+      Tambah Margin Harga
+    </Dialog.Title>
+
+    <!-- Body -->
+    <div class="space-y-4">
+      <!-- Cabang -->
+      <div>
+        <label class="block text-sm font-medium text-slate-600 mb-1">Cabang</label>
+        <FormSelect v-model="marginForm.id_cabang" class="w-full">
+          <option value="">Pilih Cabang</option>
+          <option
+            v-for="c in cabangs"
+            :key="c.id_cabang"
+            :value="c.id_cabang"
+          >
+            {{ c.nama_cabang }}
+          </option>
+        </FormSelect>
+      </div>
+
+      <!-- Produk -->
+      <div>
+        <label class="block text-sm font-medium text-slate-600 mb-1">Produk</label>
+        <FormSelect v-model="marginForm.id_produk" class="w-full">
+          <option value="">Pilih Produk</option>
+          <option
+            v-for="p in produks"
+            :key="p.id_produk"
+            :value="p.id_produk"
+          >
+            {{ p.nama_produk }}
+            <template v-if="p.ukuran">
+              – Uk: {{ p.ukuran.nama_ukuran }}
+              <span v-if="p.ukuran.satuan">
+                {{ p.ukuran.satuan.nama_satuan }}
+              </span>
+            </template>
+          </option>
+        </FormSelect>
+      </div>
+
+      <!-- Periode -->
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-slate-600 mb-1">
+            Periode Awal
+          </label>
+          <FormInput v-model="marginForm.periode_awal" type="date" class="w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-600 mb-1">
+            Periode Akhir
+          </label>
+          <FormInput v-model="marginForm.periode_akhir" type="date" class="w-full" />
+        </div>
+      </div>
+
+      <!-- Margin -->
+      <div>
+        <label class="block text-sm font-medium text-slate-600 mb-1">
+          Nominal Margin (Rp)
+        </label>
+        <FormInput
+          v-model.number="marginForm.margin"
+          type="number"
+          placeholder="contoh: 5000"
+          class="w-full"
+        />
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-6 flex justify-end gap-2 border-t pt-4">
+      <Button variant="outline-secondary" @click="showMarginModal = false">
+        Batal
+      </Button>
+      <Button variant="primary" @click="applyMargin">Terapkan</Button>
+    </div>
+  </Dialog.Panel>
+</Dialog>
+
+
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, reactive } from 'vue'
 import axios from 'axios'
 import { debounce } from 'lodash'
 import Swal from 'sweetalert2'
 import { RouterLink, useRouter } from 'vue-router'
-
+import { Dialog } from '@/components/Base/Headless'
 import Button from '@/components/Base/Button'
 import Pagination from '@/components/Base/Pagination'
 import { FormInput, FormSelect } from '@/components/Base/Form'
@@ -209,6 +299,34 @@ async function fetchHarga(page = 1) {
     error.value = e.response?.data?.message || 'Gagal memuat data'
   } finally {
     loading.value = false
+  }
+}
+
+const showMarginModal = ref(false)
+const marginForm = reactive({
+  id_cabang: '',
+  id_produk: '',
+  periode_awal: '',
+  periode_akhir: '',
+  margin: 0
+})
+
+function openMarginModal() {
+  showMarginModal.value = true
+}
+
+async function applyMargin() {
+  if (!marginForm.id_cabang || !marginForm.id_produk || !marginForm.periode_awal || !marginForm.periode_akhir || !marginForm.margin) {
+    return Swal.fire('Peringatan', 'Semua field wajib diisi', 'warning')
+  }
+
+  try {
+    await axios.post('/api/produk-hargas/add-margin', marginForm)
+    Swal.fire('Sukses', 'Margin berhasil diterapkan', 'success')
+    showMarginModal.value = false
+    fetchHarga() // refresh tabel
+  } catch (e: any) {
+    Swal.fire('Gagal', e.response?.data?.message || 'Terjadi kesalahan', 'error')
   }
 }
 

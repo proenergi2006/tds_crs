@@ -54,6 +54,7 @@ public function checkOA(Request $request)
         $data = $request->validate([
             'id_transportir' => 'required|exists:transportirs,id',
             'id_angkut_wilayah' => 'required|exists:wilayah_angkuts,id',
+            'catatan' => 'nullable|string',
             'details' => 'required|array',
             'details.*.id_volume' => 'required|exists:volumes,id_volume',
             'details.*.oa' => 'required|numeric|min:0',
@@ -85,6 +86,7 @@ public function checkOA(Request $request)
             'id_transportir' => 'required|exists:transportirs,id',
             'id_angkut_wilayah' => 'required|exists:wilayah_angkuts,id',
             'details' => 'required|array',
+            'catatan' => 'nullable|string',
             'details.*.id_volume' => 'required|exists:volumes,id_volume',
             'details.*.oa' => 'required|numeric|min:0',
         ]);

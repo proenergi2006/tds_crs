@@ -21,7 +21,6 @@ class MasterTruckController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'nama_truck' => 'required|string|max:50',
             'nopol' => 'required|string|unique:master_trucks,nopol',
             'jenis_truck' => 'required|string|max:255',
             'kapasitas' => 'required|numeric|min:0',
