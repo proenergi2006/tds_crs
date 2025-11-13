@@ -312,7 +312,7 @@
 
   <table class="sig-table">
     <tr>
-      <td class="label">Menyetujui,<br>PT. Pro Energi</td>
+      <td class="label">Menyetujui,<br>PT. Tri Daya Selaras</td>
       <td class="label t-right">PT. BOSOWA TAMBANG INDONESIA</td>
     </tr>
   
