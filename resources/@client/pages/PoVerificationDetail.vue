@@ -158,7 +158,7 @@ onMounted(fetchPo);
                   ({{ item.produk?.ukuran?.nama_ukuran || '-' }}
                   {{ item.produk?.ukuran?.satuan?.nama_satuan || '-' }})
                 </td>
-                <td class="px-4 py-2 text-right">{{ formatCurrency(item.volume_po) }}</td>
+                <td class="px-4 py-2 text-right">{{item.volume_po }}</td>
                 <td class="px-4 py-2 text-right">{{ formatCurrency(item.harga_tebus) }}</td>
                 <td class="px-4 py-2 text-right">{{ formatCurrency(item.jumlah_harga) }}</td>
               </tr>
