@@ -11,7 +11,8 @@ import Vue3SignaturePad from 'vue3-signature-pad';
 
 
 // ganti sesuai URL Laravel Anda
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
+console.log("📌 axios baseURL:", axios.defaults.baseURL)
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://syop-crs.tridayaselaras.com'
 const token = localStorage.getItem('access_token')
 if (token) {
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
@@ -21,7 +22,9 @@ if (token) {
 const app = createApp(App);
 app.config.globalProperties.$axios = axios
 
-app.use(createPinia());
+const pinia = createPinia()
+app.use(pinia)
+//app.use(createPinia());
 app.use(router);
 
 // Install vue-signature-pad plugin
@@ -42,3 +45,4 @@ router.afterEach(to => {
   const base = to.meta.title || (typeof to.name === 'string' ? to.name : '')
   document.getElementById('app-title')!.textContent = `Halaman ${base}`
 })
+
