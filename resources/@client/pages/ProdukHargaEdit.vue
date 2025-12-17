@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import Swal from 'sweetalert2'
@@ -12,7 +12,7 @@ const route = useRoute()
 const router = useRouter()
 const id = Number(route.params.id)
 
-// state form utama
+// === STATE FORM ===
 const form = reactive({
   id_produk_harga: id,
   periode_awal: '',
@@ -21,22 +21,48 @@ const form = reactive({
   id_produk: '',
   harga_price_list: 0,
   harga_bm: 0,
+  harga_cogs: 0,
+  harga_margin: 0,
+  harga_om: 0,
+  harga_ceo: 0,
   catatan: '',
   lastupdate_by: ''
 })
 
-// untuk men-display dengan ribuan
+// === DISPLAY FORMAT ===
 const displayPriceList = ref('')
-const displayBm        = ref('')
+const displayBm = ref('')
+const displayCogs = ref('')
+const displayMargin = ref('')
+const displayOm = ref('')
+const displayCeo = ref('') // ✅ field display baru
 
-// dropdown data
+// === DROPDOWN DATA ===
 const cabangs = ref<any[]>([])
 const produks = ref<any[]>([])
 
-// user untuk lastupdate_by
-const currentUser = ref('')
+// === USER LOGIN ===
+const currentUser = ref<any>({ name: '', id_role: 0 })
+const isRole2 = computed(() => currentUser.value.id_role === 2)
+const isRole5 = computed(() => currentUser.value.id_role === 5)
+const isRole8 = computed(() => currentUser.value.id_role === 8)
 
-// ambil cabang & produk
+// === HELPER READONLY ===
+function isReadonly(field: string) {
+  // role 5 hanya bisa edit harga_cogs
+  if (isRole5.value && field !== 'harga_cogs') return true
+
+  // role 8 hanya bisa edit harga_bm
+  if (isRole8.value && field !== 'harga_bm') return true
+
+  // role 2 hanya TIDAK bisa edit harga_cogs
+  if (isRole2.value && field === 'harga_cogs') return true
+
+  // role lain bisa edit semua
+  return false
+}
+
+// === FETCH DATA ===
 async function fetchDropdowns() {
   try {
     const resC = await axios.get('/api/cabangs', { params: { per_page: 100 } })
@@ -48,66 +74,91 @@ async function fetchDropdowns() {
   } catch {}
 }
 
-// helper: format angka ribuan
-function toThousands(n: number|string) {
-  const num = typeof n === 'string' ? Number(n) : n
-  if (!num) return ''
-  return Number(num).toLocaleString('id-ID')
+// === FORMATTER ===
+function formatThousand(v: string) {
+  return v.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
+function parseMoney(e: Event) {
+  return (e.target as HTMLInputElement).value.replace(/\D/g, '')
 }
 
-// handler input harga price list
+// === HANDLER INPUT ===
 function onPriceListInput(e: Event) {
-  const raw = (e.target as HTMLInputElement).value.replace(/[^\d]/g, '')
-  displayPriceList.value = raw ? Number(raw).toLocaleString('id-ID') : ''
-  form.harga_price_list = raw ? Number(raw) : 0
+  if (isReadonly('harga_price_list')) return
+  const raw = parseMoney(e)
+  form.harga_price_list = raw ? parseInt(raw) : 0
+  displayPriceList.value = formatThousand(raw)
 }
-// handler input harga bm
 function onBmInput(e: Event) {
-  const raw = (e.target as HTMLInputElement).value.replace(/[^\d]/g, '')
-  displayBm.value = raw ? Number(raw).toLocaleString('id-ID') : ''
-  form.harga_bm = raw ? Number(raw) : 0
+  if (isReadonly('harga_bm')) return
+  const raw = parseMoney(e)
+  form.harga_bm = raw ? parseInt(raw) : 0
+  displayBm.value = formatThousand(raw)
+}
+function onCogsInput(e: Event) {
+  if (isReadonly('harga_cogs')) return
+  const raw = parseMoney(e)
+  form.harga_cogs = raw ? parseInt(raw) : 0
+  displayCogs.value = formatThousand(raw)
+}
+function onMarginInput(e: Event) {
+  if (isReadonly('harga_margin')) return
+  const raw = parseMoney(e)
+  form.harga_margin = raw ? parseInt(raw) : 0
+  displayMargin.value = formatThousand(raw)
+}
+function onOmInput(e: Event) {
+  if (isReadonly('harga_om')) return
+  const raw = parseMoney(e)
+  form.harga_om = raw ? parseInt(raw) : 0
+  displayOm.value = formatThousand(raw)
 }
 
-// VALIDASI: semua wajib kecuali catatan
+function onCeoInput(e: Event) {
+  if (isReadonly('harga_ceo')) return
+  const raw = parseMoney(e)
+  form.harga_ceo = raw ? parseInt(raw) : 0
+  displayCeo.value = formatThousand(raw)
+}
+
+// === VALIDASI ===
 function validate(): { ok: boolean; message?: string } {
   if (!form.periode_awal) return { ok: false, message: 'Periode Awal wajib diisi' }
   if (!form.periode_akhir) return { ok: false, message: 'Periode Akhir wajib diisi' }
-  if (new Date(form.periode_akhir) < new Date(form.periode_awal)) {
+  if (new Date(form.periode_akhir) < new Date(form.periode_awal))
     return { ok: false, message: 'Periode Akhir tidak boleh lebih awal dari Periode Awal' }
-  }
   if (!form.id_cabang) return { ok: false, message: 'Cabang wajib dipilih' }
   if (!form.id_produk) return { ok: false, message: 'Produk wajib dipilih' }
-  if (!form.harga_price_list || form.harga_price_list <= 0) {
-    return { ok: false, message: 'Harga Price List wajib diisi dan harus lebih dari 0' }
-  }
-  if (!form.harga_bm || form.harga_bm <= 0) {
-    return { ok: false, message: 'Harga BM wajib diisi dan harus lebih dari 0' }
-  }
   return { ok: true }
 }
 
-// simpan perubahan
+// === SUBMIT ===
 async function submit() {
   const v = validate()
   if (!v.ok) {
-    return Swal.fire({
-      icon: 'error',
-      title: 'Validasi Gagal',
-      text: v.message
-    })
+    return Swal.fire({ icon: 'error', title: 'Validasi Gagal', text: v.message })
   }
 
   try {
-    await axios.put(`/api/produk-hargas/${id}`, {
+    const payload = {
       periode_awal: form.periode_awal,
       periode_akhir: form.periode_akhir,
       id_cabang: form.id_cabang,
       id_produk: form.id_produk,
-      harga_price_list: form.harga_price_list,
-      harga_bm: form.harga_bm,
+      harga_price_list: isReadonly('harga_price_list') ? 0 : form.harga_price_list,
+      harga_bm: isReadonly('harga_bm') ? 0 : form.harga_bm,
+      harga_cogs: isReadonly('harga_cogs') ? form.harga_cogs : form.harga_cogs ?? 0,
+      harga_margin: isReadonly('harga_margin') ? 0 : form.harga_margin,
+      harga_om: isReadonly('harga_om') ? 0 : form.harga_om,
+      harga_ceo: isReadonly('harga_ceo') ? 0 : form.harga_ceo,
       catatan: form.catatan,
-      lastupdate_by: currentUser.value
+      lastupdate_by: currentUser.value.name,
+    }
+
+    await axios.put(`/api/produk-hargas/${id}`, payload, {
+      headers: { 'Content-Type': 'application/json' }
     })
+
     Swal.fire({
       icon: 'success',
       title: 'Harga diperbarui',
@@ -122,21 +173,22 @@ async function submit() {
   }
 }
 
+// === INIT ===
 onMounted(async () => {
-  // load dropdown
   await fetchDropdowns()
-  // ambil user
-  try {
-    const { data: u } = await axios.get('/api/user')
-    currentUser.value = u.name
-    form.lastupdate_by = u.name
-  } catch {}
-  // ambil data existing
+  const { data: u } = await axios.get('/api/user')
+  currentUser.value = u
+  form.lastupdate_by = u.name
+
   const { data } = await axios.get(`/api/produk-hargas/${id}`)
   Object.assign(form, data)
-  // tampilkan ke input harga dengan format ribuan
-  displayPriceList.value = toThousands(data.harga_price_list)
-  displayBm.value        = toThousands(data.harga_bm)
+
+  displayPriceList.value = data.harga_price_list?.toLocaleString('id-ID') || '0'
+  displayBm.value = data.harga_bm?.toLocaleString('id-ID') || '0'
+  displayCogs.value = data.harga_cogs?.toLocaleString('id-ID') || '0'
+  displayMargin.value = data.harga_margin?.toLocaleString('id-ID') || '0'
+  displayOm.value = data.harga_om?.toLocaleString('id-ID') || '0'
+  displayCeo.value = data.harga_ceo?.toLocaleString('id-ID') || '0'
 })
 </script>
 
@@ -146,15 +198,18 @@ onMounted(async () => {
       <div class="col-span-12">
         <div class="p-6 box">
           <h2 class="text-lg font-medium mb-4">Edit Harga</h2>
+
           <div class="space-y-4">
             <div>
               <FormLabel htmlFor="periode_awal">Periode Awal</FormLabel>
               <FormInput id="periode_awal" type="date" v-model="form.periode_awal" />
             </div>
+
             <div>
               <FormLabel htmlFor="periode_akhir">Periode Akhir</FormLabel>
               <FormInput id="periode_akhir" type="date" v-model="form.periode_akhir" />
             </div>
+
             <div>
               <FormLabel htmlFor="cabang">Cabang</FormLabel>
               <FormSelect id="cabang" v-model="form.id_cabang">
@@ -164,6 +219,7 @@ onMounted(async () => {
                 </option>
               </FormSelect>
             </div>
+
             <div>
               <FormLabel htmlFor="produk">Produk</FormLabel>
               <FormSelect id="produk" v-model="form.id_produk">
@@ -173,28 +229,80 @@ onMounted(async () => {
                 </option>
               </FormSelect>
             </div>
+
+            <!-- Harga Section -->
             <div>
-              <FormLabel htmlFor="price_list">Harga Price List</FormLabel>
+              <FormLabel>Harga Price List</FormLabel>
               <FormInput
-                id="price_list"
                 type="text"
                 v-model="displayPriceList"
                 @input="onPriceListInput"
                 class="text-right"
                 placeholder="0"
+                :readonly="isReadonly('harga_price_list')"
               />
             </div>
+
             <div>
-              <FormLabel htmlFor="bm">Harga BM</FormLabel>
+              <FormLabel>Harga BM</FormLabel>
               <FormInput
-                id="bm"
                 type="text"
                 v-model="displayBm"
                 @input="onBmInput"
                 class="text-right"
                 placeholder="0"
+                :readonly="isReadonly('harga_bm')"
               />
             </div>
+
+            <div>
+              <FormLabel>Harga COGS</FormLabel>
+              <FormInput
+                type="text"
+                v-model="displayCogs"
+                @input="onCogsInput"
+                class="text-right"
+                placeholder="0"
+                :readonly="isReadonly('harga_cogs')"
+              />
+            </div>
+
+            <div>
+              <FormLabel>Harga Margin</FormLabel>
+              <FormInput
+                type="text"
+                v-model="displayMargin"
+                @input="onMarginInput"
+                class="text-right"
+                placeholder="0"
+                :readonly="isReadonly('harga_margin')"
+              />
+            </div>
+
+            <div>
+              <FormLabel>Harga OM</FormLabel>
+              <FormInput
+                type="text"
+                v-model="displayOm"
+                @input="onOmInput"
+                class="text-right"
+                placeholder="0"
+                :readonly="isReadonly('harga_om')"
+              />
+            </div>
+
+            <div>
+              <FormLabel>Harga CEO</FormLabel>
+              <FormInput
+                type="text"
+                v-model="displayCeo"
+                @input="onCeoInput"
+                class="text-right"
+                placeholder="0"
+                :readonly="isReadonly('harga_ceo')"
+              />
+            </div>
+
             <div>
               <FormLabel htmlFor="catatan">Catatan</FormLabel>
               <textarea
@@ -207,14 +315,15 @@ onMounted(async () => {
             </div>
           </div>
 
+          <!-- Tombol Aksi -->
           <div class="mt-6 flex justify-end space-x-2">
             <Button variant="outline-secondary" @click="() => router.back()" class="inline-flex items-center gap-2">
               <Lucide icon="X" class="w-4 h-4" />
-              <span>Cancel</span>
+              <span>Batal</span>
             </Button>
             <Button variant="primary" @click="submit" class="inline-flex items-center gap-2">
               <Lucide icon="Save" class="w-4 h-4" />
-              <span>Update</span>
+              <span>Simpan</span>
             </Button>
           </div>
         </div>

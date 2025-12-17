@@ -152,6 +152,16 @@
               placeholder="(opsional)"
             />
           </div>
+          <div class="col-span-12">
+            <FormLabel for="terms_condition">Terms Condition</FormLabel>
+            <textarea
+              id="terms_condition"
+              v-model="form.terms_condition"
+              rows="2"
+              class="w-full border rounded px-3 py-2"
+              placeholder="(opsional)"
+            />
+          </div>
         </div>
   
         <!-- Simpan -->
@@ -211,6 +221,7 @@
     terms_day:     0,
     items:         [] as Item[],
     keterangan:    '',
+    terms_condition: '',
     created_by:    '',
     lastupdate_by: ''
   })
@@ -266,7 +277,8 @@
       kd_tax:        p.kd_tax,
       terms:         p.terms,
       terms_day:     p.terms_day,
-      keterangan:    p.keterangan || ''
+      keterangan:    p.keterangan || '',
+      terms_condition: p.terms_condition || ''
     })
   
     // detail
@@ -305,6 +317,7 @@
         ppn11:         calcPPN.value,
         total_order:   calcTotalOrder.value,
         keterangan:    form.keterangan,
+        terms_condition:    form.terms_condition,
         disposisi_po:  0,                // reset jika perlu
         lastupdate_by: form.lastupdate_by
       })

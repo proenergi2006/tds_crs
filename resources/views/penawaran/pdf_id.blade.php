@@ -228,41 +228,43 @@
       </tr>
       <tr>
         <td class="no">2.</td><td class="label"><b>Abrasi</b></td><td class="colon">:</td>
-        <td class="value"><b>{{ $penawaran->abrasi ?? '0' }} %</b></td>
+        <td class="value"><b>{{ $penawaran->abrasi ?? '0' }} </b></td>
       </tr>
       <tr>
         <td class="no">3.</td><td class="label"><b>Harga per m&sup3;</b></td><td class="colon">:</td>
-        <td class="value">{{ $rupiah($hargaSatuan) }} <span style="color:#666">(Harga belum termasuk PPN 11%)</span></td>
+        <td class="value">{{ $rupiah($penawaran->harga_dasar) }} <span style="color:#666">(Harga belum termasuk PPN 11%)</span></td>
       </tr>
       <tr>
         <td class="no">4.</td><td class="label"><b>Metode Pembayaran</b></td><td class="colon">:</td>
-        <td class="value"><b>{{ $penawaran->termin_pembayaran ?? $defaultPayment }}</b></td>
+        <td class="value"><b>{{ $penawaran->tipe_pembayaran }}</b></td>
       </tr>
       <tr>
         <td class="no">5.</td><td class="label"><b>Metode Pemesanan</b></td><td class="colon">:</td>
-        <td class="value">{{ $penawaran->order_method ?? $defaultOrder }}</td>
+        <td class="value">{{ $penawaran->order_method}}</td>
       </tr>
       <tr>
         <td class="no">6.</td><td class="label"><b>Metode Pengiriman</b></td><td class="colon">:</td>
         <td class="value">
-          @if(($penawaran->keterangan ?? null) && strtoupper($penawaran->keterangan) !== 'FOB')
-            {{ strtoupper($penawaran->keterangan) }}
-          @else
-            {{ $defaultShipping }}
-          @endif
+          {{ $penawaran->metode}}
         </td>
       </tr>
       <tr>
         <td class="no">7.</td><td class="label"><b>Titik Serah & QC</b></td><td class="colon">:</td>
-        <td class="value">{!! $penawaran->receiving_point ?? $defaultQC !!}</td>
+        <td class="value">{!! $penawaran->keterangan !!}</td>
       </tr>
+     
       <tr>
-        <td class="no">8.</td><td class="label"><b>Harga berlaku sampai</b></td><td class="colon">:</td>
-        <td class="value">{{ $due }}</td>
-      </tr>
-      <tr>
-        <td class="no">9.</td><td class="label"><b>Toleransi</b></td><td class="colon">:</td>
+        <td class="no">8.</td><td class="label"><b>Toleransi</b></td><td class="colon">:</td>
         <td class="value">{{ $penawaran->toleransi_penyusutan ?? $defaultTolerance }}</td>
+      </tr>
+      <tr>
+        <td class="no">9.</td><td class="label"><b>Periode</b></td><td class="colon">:</td>
+        <td class="value">
+          {{ \Carbon\Carbon::parse($penawaran->masa_berlaku)->translatedFormat('d F Y') }}
+          -
+          {{ \Carbon\Carbon::parse($penawaran->sampai_dengan)->translatedFormat('d F Y') }}
+        </td>
+        
       </tr>
     </table>
   </div>

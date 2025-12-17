@@ -63,12 +63,12 @@
 
 
         <!-- Baris 2 -->
-        <div class="grid grid-cols-3 gap-4">
-          <div>
+        <div class="grid grid-cols-2 gap-4">
+          <!-- <div>
             <label class="block text-sm font-medium mb-1">Nomor Penawaran</label>
             <input v-model="form.nomor_penawaran" type="text" class="w-full border rounded p-2 bg-gray-100" disabled />
             <p class="text-xs text-gray-500">Nomor dibuat otomatis oleh backend.</p>
-          </div>
+          </div> -->
           <div>
             <label class="block text-sm font-medium mb-1">Masa Berlaku</label>
             <input v-model="form.masa_berlaku" type="date" class="w-full border rounded p-2" :class="inputClass('masa_berlaku')" />
@@ -79,8 +79,18 @@
           </div>
         </div>
 
+        <!-- Type Pengiriman -->
+<div class="mb-4">
+  <label class="block text-sm font-medium mb-1">Type Pengiriman</label>
+  <FormSelect v-model="form.type_pengiriman" class="w-full" :class="inputClass('type_pengiriman')">
+    <option value="" disabled>Pilih Type Pengiriman…</option>
+    <option value="PROJECT">Project</option>
+    <option value="RETAIL">Retail</option>
+  </FormSelect>
+</div>
+
         <!-- Metode -->
-        <div class="mb-4">
+        <!-- <div class="mb-4">
           <label class="block text-sm font-medium mb-1">Metode</label>
           <FormSelect v-model="form.metode" class="w-full" :class="inputClass('metode')">
             <option value="" disabled>Pilih…</option>
@@ -89,7 +99,29 @@
             <option value="CIF">Cost Insurance & Freight</option>
             <option value="DAP">Delivery At Place</option>
           </FormSelect>
-        </div>
+        </div> -->
+
+        <!-- Metode -->
+<div class="mb-4">
+  <label class="block text-sm font-medium mb-1">Metode</label>
+  <FormSelect v-model="form.metode" class="w-full" :class="inputClass('metode')">
+    <option value="" disabled>Pilih Metode…</option>
+
+    <!-- Untuk Project -->
+    <template v-if="form.type_pengiriman === 'PROJECT'">
+      <option value="FOB">Free On Board (FOB)</option>
+      <option value="CIF">Cost Insurance & Freight (CIF)</option>
+      <option value="DAP">Delivery At Place (DAP)</option>
+    </template>
+
+    <!-- Untuk Retail -->
+    <template v-else-if="form.type_pengiriman === 'RETAIL'">
+      <option value="FOT">Free On Truck (FOT)</option>
+      <option value="FRANCO">Franco</option>
+    </template>
+  </FormSelect>
+</div>
+
 
         <!-- OA Kapal (CIF/DAP) -->
         <div v-if="form.metode === 'CIF' || form.metode === 'DAP'" class="bg-slate-100 p-4 rounded mb-4">
@@ -160,117 +192,193 @@
         </div>
 
         <!-- Items -->
-        <div>
-          <h3 class="text-sm font-medium mb-2">Rincian Item</h3>
-          <table class="min-w-full divide-y divide-slate-200 mb-4">
-            <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
-              <tr>
-                <th class="px-4 py-2 text-left">Produk</th>
-                <th class="px-2 py-2 text-right">Persen (%)</th>
-                <th class="px-4 py-2 text-right">Volume</th>
-                <th v-if="canSeeHarga" class="px-4 py-2 text-right">Harga Tebus</th>
-                <th v-if="canSeeHarga" class="px-4 py-2 text-right">Jumlah Harga</th>
-                <th class="px-4 py-2 text-center">Aksi</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200">
-              <tr v-for="(item, idx) in form.items" :key="idx" class="hover:bg-slate-50">
-                <td class="px-4 py-2">
-                  <FormSelect v-model="item.id_produk" class="w-full" :class="itemInputClass(idx, 'id_produk')" @change="checkHarga(item)">
-                    <option value="" disabled>Pilih Produk…</option>
-                    <option v-for="p in produks" :key="p.id_produk" :value="p.id_produk">
-                      {{ p.nama_produk }} — {{ p.jenis?.nama || '-' }} /
-                      {{ p.ukuran?.nama_ukuran || '-' }} {{ p.ukuran?.satuan?.nama_satuan || '' }}
-                    </option>
-                  </FormSelect>
-                </td>
-                <td class="px-2 py-2 text-right">
-                  <input v-model="item.persen"
-                         @input="updateHargaTebus(item)"
-                         type="text" inputmode="numeric"
-                         class="w-full border rounded p-2 text-right"
-                         :class="itemInputClass(idx, 'persen')"
-                         placeholder="100" />
-                </td>
-                <td class="px-4 py-2 text-right">
-                  <input v-model="item.volume_order" @input="formatNumeric(item, 'volume_order', $event)" type="text" inputmode="numeric" class="w-full border rounded p-2 text-right" placeholder="0" />
-                </td>
-                <td v-if="canSeeHarga" class="px-4 py-2 text-right">
-                  <input v-model="item.harga_tebus" @input="formatNumeric(item, 'harga_tebus', $event)" type="text" inputmode="numeric" class="w-full border rounded p-2 text-right" placeholder="0" readonly />
-                </td>
-                <td v-if="canSeeHarga" class="px-4 py-2 text-right">
-                  {{ formatCurrency(lineTotal(item)) }}
-                </td>
-                <td class="px-4 py-2 text-center">
-                  <button type="button" class="text-red-500 hover:underline" @click="removeItem(idx)">Hapus</button>
-                </td>
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr class="bg-slate-100 font-semibold">
-                <td class="px-4 py-2 text-right" colspan="1">Total</td>
-                <td class="px-2 py-2 text-right"
-                    :class="totalPersenNumber !== 100 ? 'text-red-600 font-bold' : ''">
-                  {{ totalPersenDisplay }}
-                </td>
-                <td class="px-4 py-2 text-right">{{ totalVolume }}</td>
-                <td v-if="canSeeHarga" colspan="3"></td>
-                <td v-else colspan="1"></td>
-              </tr>
-            </tfoot>
-          </table>
+     <!-- Rincian Item -->
+<div>
+  <h3 class="text-sm font-medium mb-2">Rincian Item</h3>
+  <table class="min-w-full divide-y divide-slate-200 mb-4">
+    <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
+      <tr>
+        <th class="px-4 py-2 text-left">Produk</th>
+        <th class="px-2 py-2 text-right">Persen (%)</th>
+        <th class="px-4 py-2 text-right">Volume</th>
 
-          <!-- Ringkasan atas tabel -->
-          <div v-if="canSeeHarga" class="flex justify-end mt-4 text-sm font-semibold flex-col items-end space-y-1">
-            <div class="bg-gray-100 rounded px-4 py-2 w-fit">
-              Total Harga Tebus: {{ formatCurrency(grandTotalHargaTebus) }}
-            </div>
-            <div v-if="totalDiskon > 0" class="bg-yellow-100 rounded px-4 py-2 w-fit">
-              Diskon: -{{ formatCurrency(totalDiskon) }}
-            </div>
-            <div class="bg-green-100 rounded px-4 py-2 w-fit font-bold">
-              Setelah Diskon: {{ formatCurrency(grandTotalHargaTebusSetelahDiskon) }}
-            </div>
-          </div>
-          <div v-else class="flex justify-end mt-2 text-xs text-slate-500">
-            Ringkasan harga disembunyikan.
-          </div>
+        <!-- Harga Price List selalu tampil -->
+        <th class="px-4 py-2 text-right">Harga Price List</th>
 
-          <button type="button" class="px-3 py-1 bg-green-600 text-white rounded text-sm mt-3" @click="addItem">
-            + Tambah Item
+        <!-- Harga Tebus & Jumlah Harga hanya tampil bila canSeeHarga -->
+        <th v-if="canSeeHarga" class="px-4 py-2 text-right">Harga Tebus</th>
+        <th v-if="canSeeHarga" class="px-4 py-2 text-right">Jumlah Harga</th>
+
+        <th class="px-4 py-2 text-center">Aksi</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-200">
+      <tr
+        v-for="(item, idx) in form.items"
+        :key="idx"
+        class="hover:bg-slate-50"
+      >
+        <td class="px-4 py-2">
+          <FormSelect
+            v-model="item.id_produk"
+            class="w-full"
+            :class="itemInputClass(idx, 'id_produk')"
+            @change="checkHarga(item)"
+          >
+            <option value="" disabled>Pilih Produk…</option>
+            <option
+              v-for="p in produks"
+              :key="p.id_produk"
+              :value="p.id_produk"
+            >
+              {{ p.nama_produk }} — {{ p.jenis?.nama || '-' }} /
+              {{ p.ukuran?.nama_ukuran || '-' }} {{ p.ukuran?.satuan?.nama_satuan || '' }}
+            </option>
+          </FormSelect>
+        </td>
+
+        <td class="px-2 py-2 text-right">
+          <input
+            v-model="item.persen"
+            @input="updateHargaTebus(item)"
+            type="text"
+            inputmode="numeric"
+            class="w-full border rounded p-2 text-right"
+            :class="itemInputClass(idx, 'persen')"
+            placeholder="100"
+          />
+        </td>
+
+        <td class="px-4 py-2 text-right">
+          <input
+            v-model="item.volume_order"
+            @input="formatNumeric(item, 'volume_order', $event)"
+            type="text"
+            inputmode="numeric"
+            class="w-full border rounded p-2 text-right"
+            placeholder="0"
+          />
+        </td>
+
+        <!-- Harga Price List (selalu tampil, readonly) -->
+        <td class="px-4 py-2 text-right">
+          {{ formatCurrency(item.harga_price_list || 0) }}
+        </td>
+
+        <!-- Harga Tebus & Jumlah Harga hanya jika role boleh -->
+        <td v-if="canSeeHarga" class="px-4 py-2 text-right">
+          <input
+            v-model="item.harga_tebus"
+            @input="formatNumeric(item, 'harga_tebus', $event)"
+            type="text"
+            inputmode="numeric"
+            class="w-full border rounded p-2 text-right bg-gray-50"
+            placeholder="0"
+            readonly
+          />
+        </td>
+
+        <td v-if="canSeeHarga" class="px-4 py-2 text-right">
+          {{ formatCurrency(lineTotal(item)) }}
+        </td>
+
+        <td class="px-4 py-2 text-center">
+          <button
+            type="button"
+            class="text-red-500 hover:underline"
+            @click="removeItem(idx)"
+          >
+            Hapus
           </button>
-        </div>
+        </td>
+      </tr>
+    </tbody>
+
+    <tfoot>
+      <tr class="bg-slate-100 font-semibold">
+        <td class="px-4 py-2 text-right" colspan="1">Total</td>
+        <td
+          class="px-2 py-2 text-right"
+          :class="totalPersenNumber !== 100 ? 'text-red-600 font-bold' : ''"
+        >
+          {{ totalPersenDisplay }}
+        </td>
+        <td class="px-4 py-2 text-right">{{ totalVolume }}</td>
+        <td class="px-4 py-2"></td> <!-- kolom harga_price_list kosong di total -->
+
+        <!-- Kolom harga_tebus & jumlah harga hanya jika canSeeHarga -->
+        <td v-if="canSeeHarga" colspan="2"></td>
+        <td v-else colspan="1"></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <!-- Ringkasan harga -->
+  <div
+    v-if="canSeeHarga"
+    class="flex justify-end mt-4 text-sm font-semibold flex-col items-end space-y-1"
+  >
+    <div class="bg-gray-100 rounded px-4 py-2 w-fit">
+      Total Harga Tebus: {{ formatCurrency(grandTotalHargaTebus) }}
+    </div>
+    <div v-if="totalDiskon > 0" class="bg-yellow-100 rounded px-4 py-2 w-fit">
+      Diskon: -{{ formatCurrency(totalDiskon) }}
+    </div>
+    <div class="bg-green-100 rounded px-4 py-2 w-fit font-bold">
+      Setelah Diskon: {{ formatCurrency(grandTotalHargaTebusSetelahDiskon) }}
+    </div>
+  </div>
+
+  <div v-else class="flex justify-end mt-2 text-xs text-slate-500">
+    Ringkasan harga disembunyikan.
+  </div>
+
+  <button
+    type="button"
+    class="px-3 py-1 bg-green-600 text-white rounded text-sm mt-3"
+    @click="addItem"
+  >
+    + Tambah Item
+  </button>
+</div>
 
        
   <!-- ... yang sudah ada -->
 
   <!-- Abrasi (%) -->
   <div>
-    <label class="block text-sm font-medium mb-1">Abrasi (%)</label>
-    <div class="relative">
-      <input
-        v-model="form.abrasi"
-        @input="formatNumeric(form, 'abrasi', $event)"
-        type="text"
-        inputmode="numeric"
-        class="w-full border rounded p-2 pr-8 text-right"
-        :class="inputClass('abrasi')"
-        placeholder="0"
-      />
-      <span class="absolute right-3 top-2 text-gray-500">%</span>
-    </div>
-    <p class="text-xs text-slate-500 mt-1">Isi 0–100 (boleh kosong).</p>
-  </div>
+  <label class="block text-sm font-medium mb-1">Abrasi</label>
+  <input
+    v-model="form.abrasi"
+    type="text"
+    class="w-full border rounded p-2"
+    :class="inputClass('abrasi')"
+    placeholder="Contoh: 0-5% atau sesuai kondisi"
+  />
+  <p class="text-xs text-slate-500 mt-1">
+    Isi bebas (misal: <b>0–5%</b> atau <b>sesuai kondisi</b>).
+  </p>
+</div>
 
         <!-- Diskon (Nominal) — SELALU TAMPIL -->
-        <div class="mb-4">
-          <label class="block text-sm font-medium mb-1">Diskon (Rp)</label>
-          <input v-model="form.discount" @input="formatNumeric(form, 'discount', $event)" type="text" inputmode="numeric" class="w-full border rounded p-2 text-right" placeholder="0" />
-          <p class="text-xs text-slate-500 mt-1">Masukkan nominal potongan (bukan persen).</p>
-        </div>
+        <!-- Diskon (Nominal) — DISEMBUNYIKAN -->
+<div v-if="false" class="mb-4">
+  <label class="block text-sm font-medium mb-1">Diskon (Rp)</label>
+  <input
+    v-model="form.discount"
+    @input="formatNumeric(form, 'discount', $event)"
+    type="text"
+    inputmode="numeric"
+    class="w-full border rounded p-2 text-right"
+    placeholder="0"
+  />
+  <p class="text-xs text-slate-500 mt-1">
+    Masukkan nominal potongan (bukan persen).
+  </p>
+</div>
 
         <!-- OAT per Volume -->
-        <div class="mb-4">
+        <!-- <div class="mb-4">
   <label class="block text-sm font-medium mb-1">OAT per Volume</label>
   <input
     v-model="form.oat"
@@ -282,18 +390,93 @@
     placeholder="0"
   />
   <p class="text-xs text-slate-500 mt-1">Isi manual (contoh: 12500 atau 12.500)</p>
-</div>
+</div> -->
 
         <!-- Meta lainnya -->
         <div class="grid grid-cols-3 gap-4">
-          <div>
-            <label class="block text-sm font-medium mb-1">Tipe Pembayaran</label>
-            <FormSelect v-model="form.tipe_pembayaran" class="w-full" :class="inputClass('tipe_pembayaran')">
-              <option value="" disabled>Pilih…</option>
-              <option value="CBD">CBD</option>
-              <option value="TOP">TOP</option>
-            </FormSelect>
+         <!-- === Tipe Pembayaran === -->
+<div class="space-y-2">
+  <label class="block text-sm font-medium text-gray-700">Tipe Pembayaran</label>
+  <FormSelect
+    v-model="form.tipe_pembayaran"
+    class="w-full"
+    :class="inputClass('tipe_pembayaran')"
+  >
+    <option value="" disabled>Pilih…</option>
+    <option value="COD">COD</option>
+    <option value="CBD">CBD</option>
+    <option value="TOP">TOP</option>
+    <option value="CUSTOM">Custom</option>
+  </FormSelect>
+
+  <!-- === Form Custom (langsung di bawah select) === -->
+  <transition name="fade">
+    <div
+      v-if="form.tipe_pembayaran === 'CUSTOM'"
+      class="mt-3 border border-slate-300 rounded-lg bg-slate-50 p-4 space-y-4"
+    >
+      <h4 class="text-sm font-semibold text-slate-700 mb-2">
+        Detail Pembayaran Custom
+      </h4>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Down Payment -->
+        <div class="space-y-1">
+          <label class="text-sm font-medium text-slate-700">Down Payment (%)</label>
+          <div class="flex items-center flex-wrap gap-2">
+            <input
+              v-model="form.dp_persen"
+              @input="formatNumeric(form, 'dp_persen', $event)"
+              type="text"
+              inputmode="numeric"
+              class="w-20 border rounded p-2 text-right"
+              placeholder="20"
+            />
+            <span class="text-sm">%</span>
+            <span class="text-sm text-slate-600">After</span>
+            <input
+              v-model="form.dp_keterangan"
+              type="text"
+              class="flex-1 min-w-[160px] border rounded p-2"
+              placeholder="Purchase Order / 7 days"
+            />
           </div>
+        </div>
+
+        <!-- Repayment -->
+        <div class="space-y-1">
+          <label class="text-sm font-medium text-slate-700">Repayment (%)</label>
+          <div class="flex items-center flex-wrap gap-2">
+            <input
+              v-model="form.repayment_persen"
+              @input="formatNumeric(form, 'repayment_persen', $event)"
+              type="text"
+              inputmode="numeric"
+              class="w-20 border rounded p-2 text-right"
+              placeholder="80"
+            />
+            <span class="text-sm">%</span>
+            <span class="text-sm text-slate-600">TOP</span>
+            <input
+              v-model="form.repayment_hari"
+              @input="formatNumeric(form, 'repayment_hari', $event)"
+              type="text"
+              inputmode="numeric"
+              class="w-20 border rounded p-2 text-right"
+              placeholder="7"
+            />
+            <span class="text-sm text-slate-600">days</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-500 mt-2">
+        Contoh: <b>DP 20% after PO</b>, <b>Repayment 80% TOP 7 days</b>.
+      </p>
+    </div>
+  </transition>
+</div>
+
           <div>
             <label class="block text-sm font-medium mb-1">Order Method</label>
             <input v-model="form.order_method" type="text" class="w-full border rounded p-2" placeholder="Order Method…" />
@@ -329,6 +512,69 @@
           </div>
         </div>
 
+        <div class="bg-white shadow border rounded-lg mt-6">
+          <table class="min-w-full text-sm border-collapse border border-slate-300">
+            <thead class="bg-slate-100">
+              <tr class="text-left font-semibold">
+                <th class="px-3 py-2 border border-slate-300 w-12 text-center">No</th>
+                <th class="px-3 py-2 border border-slate-300">Rincian</th>
+                <th class="px-3 py-2 border border-slate-300 text-right">Nilai</th>
+                <th class="px-3 py-2 border border-slate-300 text-right">Harga (Rp)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="px-3 py-2 border text-center">1</td>
+                <td class="px-3 py-2 border bg-slate-50">Harga Dasar</td>
+                <td class="px-3 py-2 border"></td>
+                <td class="px-3 py-2 border text-right">
+                  <input
+                    v-model="form.harga_dasar"
+                    @input="formatNumeric(form, 'harga_dasar', $event)"
+                    type="text"
+                    inputmode="numeric"
+                    class="w-full border rounded p-1 text-right"
+                    placeholder="0"
+                  />
+                </td>
+              </tr>
+
+              <tr>
+                <td class="px-3 py-2 border text-center">2</td>
+                <td class="px-3 py-2 border bg-slate-50">Ongkos Angkut (OAT per Volume)</td>
+                <td class="px-3 py-2 border"></td>
+                <td class="px-3 py-2 border text-right">
+                  <input
+                    v-model="form.oat"
+                    @input="form.oat = formatDecimal(form.oat)"
+                    type="text"
+                    inputmode="decimal"
+                    class="w-full border rounded p-1 text-right"
+                    placeholder="0"
+                  />
+                </td>
+              </tr>
+
+              <tr>
+                <td class="px-3 py-2 border text-center">3</td>
+                <td class="px-3 py-2 border bg-slate-50">PPN</td>
+                <td class="px-3 py-2 border text-right">11%</td>
+                <td class="px-3 py-2 border text-right bg-gray-50">
+                  {{ formatCurrency(ppnHargaDasar) }}
+                </td>
+              </tr>
+
+              <tr class="font-semibold bg-slate-100">
+                <td class="px-3 py-2 border text-center" colspan="3">TOTAL</td>
+                <td class="px-3 py-2 border text-right">
+                  {{ formatCurrency(grandTotalHargaDasar) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+
         <div>
           <label class="block text-sm font-medium mb-1">Catatan</label>
           <textarea v-model="form.catatan" rows="2" class="w-full border rounded p-2" placeholder="Catatan tambahan…"></textarea>
@@ -357,9 +603,12 @@
             <span class="font-semibold">{{ formatCurrency(grandTotalWithOAT) }}</span>
           </div>
         </div>
-        <div v-else class="bg-slate-50 p-4 rounded-lg text-sm text-slate-500">
+
+
+        
+        <!-- <div v-else class="bg-slate-50 p-4 rounded-lg text-sm text-slate-500">
           Ringkasan harga disembunyikan.
-        </div>
+        </div> -->
 
         <!-- Aksi -->
         <div class="flex justify-end space-x-2 mt-6">
@@ -372,6 +621,8 @@
     </div>
   </div>
 </template>
+
+
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed, watch } from 'vue';
@@ -421,9 +672,14 @@ const form = reactive({
   items: [] as ItemLine[],
   tipe_pembayaran: '' as string,
   order_method: '' as string,
+  dp_persen: '' as string,
+  dp_keterangan: '' as string,
+  repayment_persen: '' as string,
+  repayment_hari: '' as string,
   toleransi_penyusutan: '' as string,
   lokasi_pengiriman: '' as string,
   metode: '' as string,
+  type_pengiriman: '' as string, 
   refund: '' as string,
   other_cost: '' as string,
   perhitungan: '' as string,
@@ -441,6 +697,7 @@ jabatan: '' as string,
 telepon: '' as string,
 alamat: '' as string,
 abrasi: '' as string,
+harga_dasar: '' as string,
 });
 
 // ======== VALIDASI ========
@@ -487,24 +744,40 @@ function formatDecimal(v: string | number): string {
   return n ? String(n) : '';
 }
 
+// === Perhitungan Harga Dasar + OAT + PPN ===
+const ppnHargaDasar = computed(() => {
+  const dasar = toNum(form.harga_dasar || 0)
+  const oat = toNum(form.oat || 0)
+  return Math.round((dasar + oat) * 0.11)
+})
+const grandTotalHargaDasar = computed(() => {
+  const dasar = toNum(form.harga_dasar || 0)
+  const oat = toNum(form.oat || 0)
+  return dasar + oat + ppnHargaDasar.value
+})
+
 function validateForm(): boolean {
   clearErrors();
   const msgs: string[] = [];
+
+  if (form.tipe_pembayaran === 'CUSTOM') {
+  if (!form.dp_persen || !form.repayment_persen) {
+    msgs.push('Persentase DP dan Repayment wajib diisi untuk tipe Custom.');
+  }
+}
 
   // required selects
   if (!form.id_customer) { errors['id_customer'] = true; msgs.push('Customer wajib diisi.'); }
   if (!form.id_cabang)   { errors['id_cabang']   = true; msgs.push('Cabang wajib diisi.'); }
 
+  if (!form.type_pengiriman) {
+  errors['type_pengiriman'] = true;
+  msgs.push('Type Pengiriman wajib dipilih.');
+}
   // dates
   if (!form.masa_berlaku)  { errors['masa_berlaku']  = true; msgs.push('Masa berlaku wajib diisi.'); }
   if (!form.sampai_dengan) { errors['sampai_dengan'] = true; msgs.push('Sampai dengan wajib diisi.'); }
-  if (form.abrasi) {
-    const ab = toFloat(form.abrasi);
-    if (isNaN(ab) || ab < 0 || ab > 100) {
-      errors['abrasi'] = true;
-      msgs.push('Abrasi harus 0–100.');
-    }
-  }
+ 
   if (form.masa_berlaku && form.sampai_dengan) {
     const mb = new Date(form.masa_berlaku as string).getTime();
     const sd = new Date(form.sampai_dengan as string).getTime();
@@ -740,6 +1013,7 @@ async function fetchPenawaran() {
       order_method: data.order_method || '',
       toleransi_penyusutan: data.toleransi_penyusutan?.toString() || '',
       lokasi_pengiriman: data.lokasi_pengiriman || '',
+     type_pengiriman : data.type_pengiriman || '',
       metode: data.metode || '',
       refund: data.refund?.toString() || '',
       other_cost: data.other_cost?.toString() || '',
@@ -753,7 +1027,7 @@ nama: data.nama || '',
 jabatan: data.jabatan || '',
 telepon: data.telepon || '',
 alamat: data.alamat || '',
-abrasi: (data.abrasi ?? '').toString(),
+abrasi: data.alamat || '',
     });
 
     form.oat = formatDecimal(data.oat ?? '');
@@ -789,8 +1063,14 @@ async function submitForm() {
       items: payloadItems,
       tipe_pembayaran: form.tipe_pembayaran,
       order_method: form.order_method,
+      dp_persen: parseInt((form.dp_persen || '0').replace(/\./g, ''), 10) || 0,
+dp_keterangan: form.dp_keterangan,
+repayment_persen: parseInt((form.repayment_persen || '0').replace(/\./g, ''), 10) || 0,
+repayment_hari: parseInt((form.repayment_hari || '0').replace(/\./g, ''), 10) || 0,
+
       toleransi_penyusutan: parseInt((form.toleransi_penyusutan || '0').replace(/\./g, ''), 10) || 0,
       lokasi_pengiriman: form.lokasi_pengiriman,
+      type_pengiriman: form.type_pengiriman,
       metode: form.metode,
       refund: parseInt((form.refund || '0').replace(/\./g, ''), 10) || 0,
       other_cost: parseInt((form.other_cost || '0').replace(/\./g, ''), 10) || 0,
@@ -803,7 +1083,7 @@ nama: form.nama,
 jabatan: form.jabatan,
 telepon: form.telepon,
 alamat: form.alamat,
-abrasi: parseInt((form.abrasi || '0').replace(/\./g, ''), 10) || 0, 
+abrasi: form.abrasi, 
 
 
       // total dihitung (meski harga di-hide)
@@ -815,6 +1095,10 @@ abrasi: parseInt((form.abrasi || '0').replace(/\./g, ''), 10) || 0,
       // Diskon nominal
       discount: parseInt((form.discount || '0').replace(/\./g, ''), 10) || 0,
       harga_tebus_setelah_diskon: grandTotalHargaTebusSetelahDiskon.value,
+
+      harga_dasar: Number(toNum(form.harga_dasar || 0)),
+  ppn_harga_dasar: ppnHargaDasar.value,
+  grand_total_harga_dasar: grandTotalHargaDasar.value,
 
       // OAT per volume
       oat: Number(oatPerVolumeManual.value),

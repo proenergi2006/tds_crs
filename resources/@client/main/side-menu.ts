@@ -245,6 +245,25 @@ const menu: Array<Menu | "divider"> = [
         ],
       },
       {
+        icon: "Wallet",
+        pageName: "Harga",
+        title: "Harga",
+        subMenu: [
+          {
+            icon: "ShoppingBag",
+            pageName: "produk-hargas",
+            title: "Produks Harga",
+          },
+          {
+            icon: "Tag",
+            pageName: "attachment-harga-dasar-list",
+            title: "Attachment Harga",
+          },
+         
+        ],
+      },
+     
+      {
         icon: "CreditCard",
         pageName: "vendors-list",
         title: "Vendor",
@@ -351,6 +370,25 @@ const menu: Array<Menu | "divider"> = [
         pageName: "kabupatens-list",
         title: "kabupaten",
       },
+    ],
+  },
+
+  {
+    icon: "Wallet",
+    pageName: "Harga Bm",
+    title: "Harga Bm",
+    subMenu: [
+      {
+        icon: "ShoppingBag",
+        pageName: "produk-hargas",
+        title: "Produks Harga",
+      },
+      {
+        icon: "Tag",
+        pageName: "attachment-harga-dasar-list",
+        title: "Attachment Harga",
+      },
+     
     ],
   },
 

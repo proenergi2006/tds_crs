@@ -56,21 +56,34 @@ class ProdukHargaController extends Controller
 
     public function store(Request $request)
     {
+        $request->merge(array_map(fn($v) => $v === '' ? null : $v, $request->all()));
+    
         $data = $request->validate([
             'periode_awal'     => 'required|date',
             'periode_akhir'    => 'required|date|after_or_equal:periode_awal',
             'id_cabang'        => 'required|exists:cabangs,id_cabang',
             'id_produk'        => 'required|exists:produks,id_produk',
-            'harga_price_list' => 'required|numeric',
-            'harga_bm'         => 'required|numeric',
+            'harga_price_list' => 'nullable|numeric|min:0',
+            'harga_bm'         => 'nullable|numeric|min:0',
+            'harga_cogs'       => 'nullable|numeric|min:0',
+            'harga_margin'     => 'nullable|numeric|min:0',
+            'harga_om'         => 'nullable|numeric|min:0',
+            'harga_ceo'        => 'nullable|numeric|min:0',
             'catatan'          => 'nullable|string',
         ]);
+    
+        foreach (['harga_price_list', 'harga_bm', 'harga_cogs', 'harga_margin', 'harga_om'] as $k) {
+            $data[$k] = $data[$k] ?? 0;
+        }
+    
         $data['created_time'] = now();
-        $data['created_by']   = $request->user()->name;
+        $data['created_by'] = $request->user()?->name ?? 'system';
+    
         $ph = ProdukHarga::create($data);
+    
         return response()->json($ph, 201);
     }
-
+    
     public function show($id)
     {
         $ph = ProdukHarga::with(['cabang', 'produk'])->findOrFail($id);
@@ -79,21 +92,34 @@ class ProdukHargaController extends Controller
 
     public function update(Request $request, $id)
     {
+
+        $request->merge(array_map(fn($v) => $v === '' ? null : $v, $request->all()));
+
         $data = $request->validate([
             'periode_awal'     => 'required|date',
             'periode_akhir'    => 'required|date|after_or_equal:periode_awal',
             'id_cabang'        => 'required|exists:cabangs,id_cabang',
             'id_produk'        => 'required|exists:produks,id_produk',
-            'harga_price_list' => 'required|numeric',
-            'harga_bm'         => 'required|numeric',
+            'harga_price_list' => 'nullable|numeric|min:0',
+            'harga_bm'         => 'nullable|numeric|min:0',
+            'harga_cogs'       => 'nullable|numeric|min:0',
+            'harga_margin'     => 'nullable|numeric|min:0',
+            'harga_om'         => 'nullable|numeric|min:0',
+            'harga_ceo'        => 'nullable|numeric|min:0',
             'catatan'          => 'nullable|string',
         ]);
+
+       
+
         $data['lastupdate_time'] = now();
-        $data['lastupdate_by']   = $request->user()->name;
+        $data['lastupdate_by']   = $request->user()?->name ?? 'system';
+
         $ph = ProdukHarga::findOrFail($id);
         $ph->update($data);
+
         return response()->json($ph);
     }
+
 
     public function destroy($id)
     {

@@ -26,6 +26,11 @@ class Penawaran extends Model
         'nama',
         'alamat',
         'fax',
+        'type_pengiriman', // ✅ kolom baru
+        'dp_persen',
+    'dp_keterangan',
+    'repayment_persen',
+    'repayment_hari',
         'tipe_pembayaran',
         'order_method',
         'toleransi_penyusutan',
@@ -40,6 +45,9 @@ class Penawaran extends Model
         'discount',
         'harga_tebus_setelah_diskon',
         'total_with_oat',
+        'harga_dasar',
+        'ppn_harga_dasar',
+        'grand_total_harga_dasar',
         'oat',
         'created_at',
         'created_by',
@@ -63,6 +71,12 @@ class Penawaran extends Model
     {
         return $this->belongsTo(Customer::class, 'id_customer', 'id_customer');
     }
+
+    public function produk_harga()
+{
+    // relasi ke tabel produk_hargas berdasarkan id_produk
+    return $this->belongsTo(\App\Models\ProdukHarga::class, 'id_produk', 'id_produk');
+}
 
     // Penawaran belongsTo Cabang
     public function cabang()

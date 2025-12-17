@@ -46,8 +46,17 @@ export const useMenuStore = defineStore('menu', {
           return roleId === 1
         }else if(typeof item !== 'string' && item.title === 'Refrensi Data'){
           return roleId === 2 
-        }else if(typeof item !== 'string' && item.title === 'Inventory-Data' || item.title === 'Transactions-Data' || item.title === 'Master-Data'){
+        }else if(
+          typeof item !== 'string' &&
+          (
+            item.title === 'Inventory-Data' ||
+            item.title === 'Transactions-Data' ||
+            item.title === 'Master-Data' ||
+            item.title === 'Harga'
+          )
+        ){
           return roleId === 5
+        
         }else if(typeof item !== 'string' && item.title === 'Customer'){
           return roleId === 4
         }else if(typeof item !== 'string' && item.title === 'Master Logistik' || item.title === 'Review Data Customer Logistik' || item.title === 'Delivery Plan'){
@@ -56,7 +65,8 @@ export const useMenuStore = defineStore('menu', {
           return roleId === 4
         }else if(typeof item !== 'string' && item.title === 'Sales Confirmation' || item.title === 'Review Data Customer Admin'){
           return roleId === 9
-        }else if(typeof item !== 'string' && item.title === 'Sales Confirmation (BM)' || item.title === 'Verifikasi BM' || item.title === 'Review Customer BM' || item.title === 'Master Wilayah'){
+        }else if(typeof item !== 'string' && item.title === 'Sales Confirmation (BM)' || item.title === 'Verifikasi BM' || item.title === 'Review Customer BM' || item.title === 'Master Wilayah' ||
+          item.title === 'Harga Bm'){
           return roleId === 8
         }else if(typeof item !== 'string' && item.title === 'Verifikasi'){
           return roleId === 2 || roleId === 3

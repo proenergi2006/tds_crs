@@ -1,7 +1,6 @@
 <template>
   <div class="py-6 bg-slate-100 min-h-screen">
     <div class="intro-y grid grid-cols-12 gap-6 mt-8">
-      <!-- Form Card: full-width -->
       <div class="col-span-12">
         <div class="p-6 box">
           <h2 class="text-lg font-medium mb-4">Tambah Harga</h2>
@@ -35,51 +34,29 @@
               </Button>
             </div>
 
+            <!-- Periode -->
             <div>
               <FormLabel :for="`periode_awal_${i}`">Periode Awal</FormLabel>
-              <FormInput
-                :id="`periode_awal_${i}`"
-                type="date"
-                v-model="row.periode_awal"
-                class="w-full"
-              />
+              <FormInput type="date" v-model="row.periode_awal" class="w-full" />
             </div>
-
             <div>
               <FormLabel :for="`periode_akhir_${i}`">Periode Akhir</FormLabel>
-              <FormInput
-                :id="`periode_akhir_${i}`"
-                type="date"
-                v-model="row.periode_akhir"
-                class="w-full"
-              />
+              <FormInput type="date" v-model="row.periode_akhir" class="w-full" />
             </div>
 
+            <!-- Cabang & Produk -->
             <div>
               <FormLabel :for="`cabang_${i}`">Cabang</FormLabel>
-              <FormSelect
-                :id="`cabang_${i}`"
-                v-model="row.id_cabang"
-                class="w-full"
-              >
+              <FormSelect v-model="row.id_cabang" class="w-full">
                 <option disabled value="">-- Pilih Cabang --</option>
-                <option
-                  v-for="c in cabangs"
-                  :key="c.id_cabang"
-                  :value="c.id_cabang"
-                >
+                <option v-for="c in cabangs" :key="c.id_cabang" :value="c.id_cabang">
                   {{ c.nama_cabang }}
                 </option>
               </FormSelect>
             </div>
-
             <div>
               <FormLabel :for="`produk_${i}`">Produk</FormLabel>
-              <FormSelect
-                :id="`produk_${i}`"
-                v-model="row.id_produk"
-                class="w-full"
-              >
+              <FormSelect v-model="row.id_produk" class="w-full">
                 <option disabled value="">-- Pilih Produk --</option>
                 <option
                   v-for="p in produks"
@@ -91,34 +68,84 @@
               </FormSelect>
             </div>
 
+            <!-- Harga -->
             <div>
               <FormLabel :for="`hpl_${i}`">Harga Price List</FormLabel>
               <FormInput
-                :id="`hpl_${i}`"
                 type="text"
                 :value="row.displayPriceList"
                 @input="onPriceListInput(i, $event)"
                 placeholder="0"
                 class="w-full"
+                :readonly="isReadonly('harga_price_list')"
               />
             </div>
 
             <div>
               <FormLabel :for="`hbm_${i}`">Harga BM</FormLabel>
               <FormInput
-                :id="`hbm_${i}`"
                 type="text"
                 :value="row.displayBm"
                 @input="onBmInput(i, $event)"
                 placeholder="0"
                 class="w-full"
+                :readonly="isReadonly('harga_bm')"
               />
             </div>
 
+            <div>
+              <FormLabel :for="`cogs_${i}`">Harga COGS</FormLabel>
+              <FormInput
+                type="text"
+                :value="row.displayCogs"
+                @input="onCogsInput(i, $event)"
+                placeholder="0"
+                class="w-full"
+                :readonly="isReadonly('harga_cogs')"
+              />
+            </div>
+
+            <div>
+              <FormLabel :for="`margin_${i}`">Harga Margin</FormLabel>
+              <FormInput
+                type="text"
+                :value="row.displayMargin"
+                @input="onMarginInput(i, $event)"
+                placeholder="0"
+                class="w-full"
+                :readonly="isReadonly('harga_margin')"
+              />
+            </div>
+
+            <div>
+              <FormLabel :for="`om_${i}`">Harga OM</FormLabel>
+              <FormInput
+                type="text"
+                :value="row.displayOm"
+                @input="onOmInput(i, $event)"
+                placeholder="0"
+                class="w-full"
+                :readonly="isReadonly('harga_om')"
+              />
+            </div>
+
+            <div>
+  <FormLabel :for="`ceo_${i}`">Harga CEO</FormLabel>
+  <FormInput
+    type="text"
+    :value="row.displayCeo"
+    @input="onCeoInput(i, $event)"
+    placeholder="0"
+    class="w-full"
+    :readonly="isReadonly('harga_ceo')"
+  />
+</div>
+
+
+            <!-- Catatan -->
             <div class="col-span-full">
               <FormLabel :for="`catatan_${i}`">Catatan</FormLabel>
               <textarea
-                :id="`catatan_${i}`"
                 v-model="row.catatan"
                 rows="2"
                 class="w-full border rounded px-3 py-2"
@@ -127,6 +154,7 @@
             </div>
           </div>
 
+          <!-- Tombol -->
           <div class="mt-6 flex justify-end space-x-2">
             <Button variant="outline-secondary" @click="cancel" class="inline-flex items-center gap-2">
               <Lucide icon="X" class="w-4 h-4" />
@@ -144,7 +172,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import Swal from 'sweetalert2'
 import Button from '@/components/Base/Button'
@@ -155,9 +183,10 @@ import { useRouter } from 'vue-router'
 // router
 const router = useRouter()
 
-// untuk dropdown cabang & produk
+// dropdown data
 const cabangs = ref<any[]>([])
 const produks = ref<any[]>([])
+
 onMounted(async () => {
   const [c, p] = await Promise.all([
     axios.get('/api/cabangs', { params: { per_page: 100 } }),
@@ -167,14 +196,31 @@ onMounted(async () => {
   produks.value = p.data.data
 })
 
-// ambil nama user untuk created_by
-const currentUser = ref('')
+// user login
+const currentUser = ref<any>({ name: '', id_role: 0 })
 onMounted(async () => {
   const { data } = await axios.get('/api/user')
-  currentUser.value = data.name
+  currentUser.value = data
 })
 
-// tipe satu baris form
+// role checks
+const isRole5 = computed(() => currentUser.value.id_role === 5)
+const isRole8 = computed(() => currentUser.value.id_role === 8)
+const isRole10 = computed(() => currentUser.value.id_role === 10)
+
+
+// helper: field readonly rules
+function isReadonly(field: string) {
+  // role 5: hanya bisa isi harga_cogs
+  if (isRole5.value && field !== 'harga_cogs') return true
+  // role 8: hanya bisa isi harga_bm
+  if (isRole8.value && field !== 'harga_bm') return true
+  if (isRole10.value && field !== 'harga_om') return true
+ 
+  return false
+}
+
+// tipe data
 interface Row {
   periode_awal: string
   periode_akhir: string
@@ -184,149 +230,152 @@ interface Row {
   displayPriceList: string
   harga_bm: number | null
   displayBm: string
+  harga_cogs: number | null
+  displayCogs: string
+  harga_margin: number | null
+  displayMargin: string
+  harga_om: number | null
+  displayOm: string
+  harga_ceo: number | null
+  displayCeo: string
   catatan: string
   created_by: string
 }
 
-// state: array baris
 const formRows = ref<Row[]>([
   {
     periode_awal: '',
     periode_akhir: '',
     id_cabang: '',
     id_produk: '',
-    harga_price_list: null,
-    displayPriceList: '',
-    harga_bm: null,
-    displayBm: '',
+    harga_price_list: 0,
+    displayPriceList: '0',
+    harga_bm: 0,
+    displayBm: '0',
+    harga_cogs: null,
+    displayCogs: '',
+    harga_margin: 0,
+    displayMargin: '0',
+    harga_om: 0,
+    displayOm: '0',
+    harga_ceo: 0,
+    displayCeo: '0',
     catatan: '',
-    created_by: currentUser.value,
+    created_by: currentUser.value.name,
   },
 ])
 
-// tambah / hapus baris
 function addRow() {
-  formRows.value.push({
-    periode_awal: '',
-    periode_akhir: '',
-    id_cabang: '',
-    id_produk: '',
-    harga_price_list: null,
-    displayPriceList: '',
-    harga_bm: null,
-    displayBm: '',
-    catatan: '',
-    created_by: currentUser.value,
-  })
+  formRows.value.push({ ...formRows.value[0] })
 }
 function removeRow(i: number) {
-  if (formRows.value.length > 1) {
-    formRows.value.splice(i, 1)
-  }
+  if (formRows.value.length > 1) formRows.value.splice(i, 1)
 }
 
-// helper format ribuan
+// format ribuan
 function formatThousand(v: string) {
   return v.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 }
+function parseMoney(e: Event) {
+  return (e.target as HTMLInputElement).value.replace(/\D/g, '')
+}
 
-// event handler input harga price list
 function onPriceListInput(i: number, e: Event) {
-  const raw = (e.target as HTMLInputElement).value.replace(/\D/g, '')
-  formRows.value[i].harga_price_list = raw ? parseInt(raw) : null
+  if (isReadonly('harga_price_list')) return
+  const raw = parseMoney(e)
+  formRows.value[i].harga_price_list = raw ? parseInt(raw) : 0
   formRows.value[i].displayPriceList = formatThousand(raw)
 }
 
-// event handler input harga BM
 function onBmInput(i: number, e: Event) {
-  const raw = (e.target as HTMLInputElement).value.replace(/\D/g, '')
-  formRows.value[i].harga_bm = raw ? parseInt(raw) : null
+  if (isReadonly('harga_bm')) return
+  const raw = parseMoney(e)
+  formRows.value[i].harga_bm = raw ? parseInt(raw) : 0
   formRows.value[i].displayBm = formatThousand(raw)
 }
 
-const loading = ref(false)
-const error   = ref('')
+function onCogsInput(i: number, e: Event) {
+  if (isReadonly('harga_cogs')) return
+  const raw = parseMoney(e)
+  formRows.value[i].harga_cogs = raw ? parseInt(raw) : null
+  formRows.value[i].displayCogs = formatThousand(raw)
+}
 
-// VALIDASI: semua wajib kecuali catatan
+function onMarginInput(i: number, e: Event) {
+  if (isReadonly('harga_margin')) return
+  const raw = parseMoney(e)
+  formRows.value[i].harga_margin = raw ? parseInt(raw) : 0
+  formRows.value[i].displayMargin = formatThousand(raw)
+}
+
+function onOmInput(i: number, e: Event) {
+  if (isReadonly('harga_om')) return
+  const raw = parseMoney(e)
+  formRows.value[i].harga_om = raw ? parseInt(raw) : 0
+  formRows.value[i].displayOm = formatThousand(raw)
+}
+
+function onCeoInput(i: number, e: Event) {
+  if (isReadonly('harga_ceo')) return
+  const raw = parseMoney(e)
+  formRows.value[i].harga_ceo = raw ? parseInt(raw) : 0
+  formRows.value[i].displayCeo = formatThousand(raw)
+}
+
+// validasi sederhana
+const error = ref('')
 function validateRows(): { ok: boolean; message?: string } {
   for (let i = 0; i < formRows.value.length; i++) {
     const r = formRows.value[i]
     const rowNo = i + 1
 
-    if (!r.periode_awal) {
-      return { ok: false, message: `Row ${rowNo}: Periode Awal wajib diisi` }
-    }
-    if (!r.periode_akhir) {
-      return { ok: false, message: `Row ${rowNo}: Periode Akhir wajib diisi` }
-    }
-    // cek range tanggal
-    if (new Date(r.periode_akhir) < new Date(r.periode_awal)) {
+    if (!r.periode_awal) return { ok: false, message: `Row ${rowNo}: Periode Awal wajib diisi` }
+    if (!r.periode_akhir) return { ok: false, message: `Row ${rowNo}: Periode Akhir wajib diisi` }
+    if (new Date(r.periode_akhir) < new Date(r.periode_awal))
       return { ok: false, message: `Row ${rowNo}: Periode Akhir tidak boleh lebih awal dari Periode Awal` }
-    }
 
-    if (!r.id_cabang) {
-      return { ok: false, message: `Row ${rowNo}: Cabang wajib dipilih` }
-    }
-    if (!r.id_produk) {
-      return { ok: false, message: `Row ${rowNo}: Produk wajib dipilih` }
-    }
-
-    if (r.harga_price_list === null || r.harga_price_list <= 0) {
-      return { ok: false, message: `Row ${rowNo}: Harga Price List wajib diisi dan harus lebih dari 0` }
-    }
-    if (r.harga_bm === null || r.harga_bm <= 0) {
-      return { ok: false, message: `Row ${rowNo}: Harga BM wajib diisi dan harus lebih dari 0` }
-    }
+    if (!r.id_cabang) return { ok: false, message: `Row ${rowNo}: Cabang wajib dipilih` }
+    if (!r.id_produk) return { ok: false, message: `Row ${rowNo}: Produk wajib dipilih` }
   }
   return { ok: true }
 }
 
-// kirim semua baris
+// submit semua
+const loading = ref(false)
 async function submitAll() {
-  error.value = ''
-
-  // Jalankan validasi SweetAlert
   const v = validateRows()
   if (!v.ok) {
-    return Swal.fire({
-      icon: 'error',
-      title: 'Validasi Gagal',
-      text: v.message,
-    })
+    Swal.fire({ icon: 'error', title: 'Validasi Gagal', text: v.message })
+    return
   }
 
   loading.value = true
   try {
     await Promise.all(
-      formRows.value.map(r =>
-        axios.post('/api/produk-hargas', {
-          periode_awal:     r.periode_awal,
-          periode_akhir:    r.periode_akhir,
-          id_cabang:        r.id_cabang,
-          id_produk:        r.id_produk,
-          harga_price_list: r.harga_price_list,
-          harga_bm:         r.harga_bm,
-          catatan:          r.catatan,
-          created_by:       currentUser.value,
-        })
-      )
+      formRows.value.map(r => {
+        const payload = {
+          periode_awal: r.periode_awal,
+          periode_akhir: r.periode_akhir,
+          id_cabang: r.id_cabang,
+          id_produk: r.id_produk,
+          harga_price_list: r.harga_price_list ?? 0,
+          harga_bm: r.harga_bm ?? 0,
+          harga_cogs: r.harga_cogs ?? 0,
+          harga_margin: r.harga_margin ?? 0,
+          harga_om: r.harga_om ?? 0,
+          harga_ceo: r.harga_ceo ?? 0, 
+          catatan: r.catatan,
+          created_by: currentUser.value.name,
+        }
+        return axios.post('/api/produk-hargas', payload)
+      })
     )
-    Swal.fire({
-      icon: 'success',
-      title: 'Data tersimpan',
-      toast: true,
-      position: 'top-end',
-      timer: 1500,
-      showConfirmButton: false
-    })
+
+    Swal.fire({ icon: 'success', title: 'Data tersimpan', toast: true, timer: 1500, showConfirmButton: false })
     router.push({ name: 'produk-hargas' })
   } catch (e: any) {
     error.value = e.response?.data?.message || 'Gagal menyimpan'
-    Swal.fire({
-      icon: 'error',
-      title: 'Gagal Menyimpan',
-      text: error.value
-    })
+    Swal.fire({ icon: 'error', title: 'Gagal Menyimpan', text: error.value })
   } finally {
     loading.value = false
   }
@@ -336,7 +385,3 @@ function cancel() {
   router.back()
 }
 </script>
-
-<style scoped>
-/* opsional: override styling */
-</style>

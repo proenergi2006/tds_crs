@@ -184,7 +184,7 @@
       ->implode(', ');
 
   $firstItem   = $penawaran->items->first();
-  $hargaSatuan = $firstItem?->harga_tebus ?? 0;
+  $hargaSatuan = $firstItem?->harga_dasar ?? 0;
 
   $rupiah = fn($n) => 'Rp '.number_format((float)$n, 0, ',', '.');
 
@@ -248,7 +248,7 @@
   <!-- Intro -->
   <p class="p">Dear Sir,</p>
   <p class="p">
-    Together with this letter, please allow us introduce that we are from PT Tri Daya Selaras (An affiliated company of PT Pro Energi) as a Legal Entity and have a Sales
+    Together with this letter, please allow us introduce that we are from PT Tri Daya Selaras (An ffiliated company of PT Pro Energi) as a Legal Entity and have a Sales
     Transportation Mining Business License from ESDM, which is engaged in Mining.
   </p>
   <p class="p">
@@ -266,41 +266,41 @@
       </tr>
       <tr>
         <td class="no">2.</td><td class="label"><b>Abrasion</b></td><td class="colon">:</td>
-        <td class="value"><b>{{ $penawaran->abrasi ?? '0' }} %</b></td>
+        <td class="value"><b>{{ $penawaran->abrasi ?? '0' }} </b></td>
       </tr>
       <tr>
         <td class="no">3.</td><td class="label"><b>Price per m&sup3;</b></td><td class="colon">:</td>
-        <td class="value">{{ $rupiah($hargaSatuan) }} <span style="color:#666">(Price exclude 11% VAT)</span></td>
+        <td class="value">{{ $rupiah($penawaran->harga_dasar) }} <span style="color:#666">(Price exclude 11% VAT)</span></td>
       </tr>
       <tr>
         <td class="no">4.</td><td class="label"><b>Payment Method</b></td><td class="colon">:</td>
-        <td class="value"><b>{{ $penawaran->termin_pembayaran ?? $defaultPayment }}</b></td>
+        <td class="value"><b>{{ $penawaran->tipe_pembayaran  }}</b></td>
       </tr>
       <tr>
         <td class="no">5.</td><td class="label"><b>Ordering Method</b></td><td class="colon">:</td>
-        <td class="value">{{ $penawaran->order_method ?? $defaultOrder }}</td>
+        <td class="value">{{ $penawaran->order_method  }}</td>
       </tr>
       <tr>
         <td class="no">6.</td><td class="label"><b>Delivery Method</b></td><td class="colon">:</td>
         <td class="value">
-          @if(($penawaran->keterangan ?? null) && strtoupper($penawaran->keterangan) !== 'FOB')
-            {{ strtoupper($penawaran->keterangan) }}
-          @else
-            {{ $defaultShipping }}
-          @endif
+          {{ $penawaran->metode }}
         </td>
       </tr>
       <tr>
         <td class="no">7.</td><td class="label"><b>Receiving Point & QC</b></td><td class="colon">:</td>
-        <td class="value">{!! $penawaran->receiving_point ?? $defaultQC !!}</td>
+        <td class="value">{!! $penawaran->keterangan !!}</td>
       </tr>
       <tr>
-        <td class="no">8.</td><td class="label"><b>Price due to</b></td><td class="colon">:</td>
-        <td class="value">{{ $due }}</td>
+        <td class="no">8.</td><td class="label"><b>Tolerance</b></td><td class="colon">:</td>
+        <td class="value">{{ $penawaran->toleransi_penyusutan  }} %</td>
       </tr>
       <tr>
-        <td class="no">9.</td><td class="label"><b>Tolerance</b></td><td class="colon">:</td>
-        <td class="value">{{ $penawaran->toleransi_penyusutan ?? $defaultTolerance }} %</td>
+        <td class="no">9.</td><td class="label"><b>Periode</b></td><td class="colon">:</td>
+        <td class="value">
+          {{ \Carbon\Carbon::parse($penawaran->masa_berlaku)->translatedFormat('d F Y') }}
+          -
+          {{ \Carbon\Carbon::parse($penawaran->sampai_dengan)->translatedFormat('d F Y') }}
+        </td>
       </tr>
     </table>
   </div>

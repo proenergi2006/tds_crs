@@ -234,7 +234,7 @@ Sides.  &mdash; Once get QC clearance, barge will depart to Discharge Port';
       </tr>
       <tr>
         <td class="no">2.</td><td class="label"><b>Abrasion</b></td><td class="colon">:</td>
-        <td class="value"><b>{{ $penawaran->abrasi ?? '0%' }} %</b></td>
+        <td class="value"><b>{{ $penawaran->abrasi ?? '0%' }} </b></td>
       </tr>
       <tr>
         <td class="no">3.</td><td class="label"><b>Price per m&sup3;</b></td><td class="colon">:</td>
@@ -262,14 +262,21 @@ Sides.  &mdash; Once get QC clearance, barge will depart to Discharge Port';
         <td class="no">7.</td><td class="label"><b>Receiving Point & QC</b></td><td class="colon">:</td>
         <td class="value">{!! $penawaran->receiving_point ?? $defaultQC !!}</td>
       </tr>
+    
       <tr>
-        <td class="no">8.</td><td class="label"><b>Price due to</b></td><td class="colon">:</td>
-        <td class="value">{{ $due }}</td>
-      </tr>
-      <tr>
-        <td class="no">9.</td><td class="label"><b>Tolerance</b></td><td class="colon">:</td>
+        <td class="no">8.</td><td class="label"><b>Tolerance</b></td><td class="colon">:</td>
         <td class="value">{{ $penawaran->toleransi_penyusutan ?? $defaultTolerance }} %</td>
       </tr>
+      <tr>
+        <td class="no">9.</td><td class="label"><b>Price due to</b></td><td class="colon">:</td>
+        <td class="value">
+          {{ \Carbon\Carbon::parse($penawaran->masa_berlaku)->translatedFormat('d F Y') }}
+          -
+          {{ \Carbon\Carbon::parse($penawaran->sampai_dengan)->translatedFormat('d F Y') }}
+        </td>
+      </tr>
+
+      
     </table>
   </div>
   <br>

@@ -276,7 +276,19 @@ private function saveQrSvgToStorage(string|array $payload, int $idPenawaran): ar
             'cabang',
             'items.produk.jenis',
             'items.produk.ukuran.satuan',
+            'produk_harga', // relasi baru
         ])->findOrFail($id);
+
+        if (!$penawaran->produk_harga && $penawaran->items->isNotEmpty()) {
+            $firstProdukId = $penawaran->items->first()->id_produk;
+            $harga = \App\Models\ProdukHarga::where('id_produk', $firstProdukId)
+                ->orderByDesc('periode_akhir')
+                ->first();
+    
+            if ($harga) {
+                $penawaran->setRelation('produk_harga', $harga);
+            }
+        }
 
         return response()->json($penawaran);
     }
@@ -292,7 +304,14 @@ private function saveQrSvgToStorage(string|array $payload, int $idPenawaran): ar
             'items.*.id_produk'    => 'required|exists:produks,id_produk',
             'items.*.volume_order' => 'required|numeric|min:0',
             'items.*.harga_tebus'  => 'required|numeric|min:0',
+            'type_pengiriman' => 'nullable|in:PROJECT,RETAIL',
             'tipe_pembayaran'      => 'nullable|string|max:100',
+            'dp_persen'        => 'nullable|numeric|min:0|max:100',
+            'dp_keterangan'    => 'nullable|string|max:100',
+            'repayment_persen' => 'nullable|numeric|min:0|max:100',
+            'repayment_hari'   => 'nullable|numeric|min:0',
+
+
             'order_method'         => 'nullable|string|max:100',
             'toleransi_penyusutan' => 'nullable|numeric|min:0',
             'lokasi_pengiriman'    => 'nullable|string|max:255',
@@ -311,8 +330,12 @@ private function saveQrSvgToStorage(string|array $payload, int $idPenawaran): ar
             'jabatan'  => 'nullable|string|max:255',
             'telepon'  => 'nullable|string|max:255',
             'alamat'   => 'nullable|string',
-            'abrasi'   => 'nullable|numeric|min:0|max:100',
+          'abrasi' => 'nullable|string|max:100',
+
             'user_id'  => 'nullable|exists:users,id',
+            'harga_dasar' => 'nullable|numeric|min:0',
+            'ppn_harga_dasar' => 'nullable|numeric|min:0',
+            'grand_total_harga_dasar' => 'nullable|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -355,6 +378,7 @@ private function saveQrSvgToStorage(string|array $payload, int $idPenawaran): ar
             'discount'                   => $diskon,
             'status'                     => 'draft',
             'disposisi_penawaran'        => '1',
+            'type_pengiriman'            => $data['type_pengiriman'] ?? null, // ✅ field baru
             'created_at'                 => now(),
             'created_by'                 => optional($request->user())->name,
         ]);
@@ -427,9 +451,15 @@ $penawaran->forceFill(['qr_code' => $saved['url']])->save();
             'items.*.volume_order' => 'required|numeric|min:0',
             'items.*.harga_tebus'  => 'required|numeric|min:0',
             'tipe_pembayaran'      => 'nullable|string|max:100',
+            'dp_persen'        => 'nullable|numeric|min:0|max:100',
+            'dp_keterangan'    => 'nullable|string|max:100',
+            'repayment_persen' => 'nullable|numeric|min:0|max:100',
+            'repayment_hari'   => 'nullable|numeric|min:0',
+
             'order_method'         => 'nullable|string|max:100',
             'toleransi_penyusutan' => 'nullable|numeric|min:0',
             'lokasi_pengiriman'    => 'nullable|string|max:255',
+            'type_pengiriman' => 'nullable|in:PROJECT,RETAIL',
             'metode'               => 'nullable|string|max:100',
             'refund'               => 'nullable|numeric|min:0',
             'other_cost'           => 'nullable|numeric|min:0',
@@ -440,12 +470,13 @@ $penawaran->forceFill(['qr_code' => $saved['url']])->save();
             'discount'             => 'nullable|numeric|min:0',
             'oat'                  => 'nullable|numeric|min:0',
             'kepada'   => 'nullable|string|max:255',
-'nama'     => 'nullable|string|max:255',
-'jabatan'  => 'nullable|string|max:255',
-'telepon'  => 'nullable|string|max:255',
-'alamat'   => 'nullable|string',
-'abrasi'  => 'nullable|numeric|min:0|max:100',
-'user_id' => 'nullable|exists:users,id',
+            'nama'     => 'nullable|string|max:255',
+            'jabatan'  => 'nullable|string|max:255',
+            'telepon'  => 'nullable|string|max:255',
+            'alamat'   => 'nullable|string',
+           'abrasi' => 'nullable|string|max:100',
+
+            'user_id' => 'nullable|exists:users,id',
 
         ]);
 
@@ -481,6 +512,7 @@ $penawaran->forceFill(['qr_code' => $saved['url']])->save();
         $data['ppn11']                      = $ppn11;
         $data['total']                      = $total;
         $data['total_with_oat']             = $totalWithOat;
+        $data['type_pengiriman'] = $data['type_pengiriman'] ?? $penawaran->type_pengiriman;
         $data['discount']                   = $diskon;
         $data['updated_at']                 = now();
         $data['updated_by']                 = $request->user()->name ?? null;
