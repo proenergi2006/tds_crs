@@ -102,6 +102,7 @@
 </head>
 <body>
 @php
+  $hasTerms = !empty(trim($po->terms_condition ?? ''));
   $rp0   = fn($n) => 'IDR '.number_format((float)$n, 0, ',', '.');
   $dateS = $po->tanggal_po ?? $po->tanggal_inven ?? $po->tanggal ?? null;
   $date  = $dateS ? \Carbon\Carbon::parse($dateS)->translatedFormat('d F Y') : '-';
@@ -254,7 +255,31 @@
       <td><div class="saybox">{{ $amountWords }}</div></td>
     </tr>
   </table>
+
+  {{-- TTD JIKA TANPA TERMS --}}
+  @if(!$hasTerms)
+  <table class="sig-table" style="margin-top:15mm">
+    <tr>
+      <td class="label">Menyetujui,<br>PT. Tri Daya Selaras</td>
+      <td class="label t-right">{{ strtoupper(optional($po->vendor)->nama_vendor) }}</td>
+    </tr>
+    <tr>
+      <td class="signbox">
+        @if(!empty($qrBase64))
+          <img src="{{ $qrBase64 }}" class="qr">
+        @endif
+      </td>
+      <td class="signbox"></td>
+    </tr>
+    <tr>
+      <td class="name">Vica Krisdianatha<div class="role">Direktur Utama</div></td>
+      <td class="name t-right">Direktur</td>
+    </tr>
+  </table>
+  @endif
 </div>
+
+
 
 {{-- <div class="page-footer">
   <div class="inner">
@@ -272,6 +297,8 @@
 </div> --}}
 
 <!-- ======================== HALAMAN 2 (TERMS) ======================== -->
+@if($hasTerms)
+
 <div class="page-break"></div>
 
 <div class="terms-wrap">
@@ -313,7 +340,7 @@
   <table class="sig-table">
     <tr>
       <td class="label">Menyetujui,<br>PT. Tri Daya Selaras</td>
-      <td class="label t-right">PT. BOSOWA TAMBANG INDONESIA</td>
+      <td class="label t-right">{{ strtoupper(optional($po->vendor)->nama_vendor) }}</td>
     </tr>
   
     {{-- Baris ruang tanda tangan (tinggi sama di kiri-kanan) --}}
@@ -342,5 +369,6 @@
     Printed by {{ auth()->user()->name ?? 'system' }} {{ now()->format('d/m/Y H:i:s') }} WIB
   </div>
 </div>
+@endif
 </body>
 </html>
