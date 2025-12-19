@@ -27,6 +27,7 @@
                     <FormSelect id="kategori" v-model="form.kategori_terminal">
                     <option disabled value="">-- Pilih Kategori --</option>
                     <option value="Jetty">Jetty</option>
+                    <option value="StockPile">StockPile</option>
                     <!-- jika nanti ada pilihan lain, tambahkan di sini -->
                     </FormSelect>
                 </div>
