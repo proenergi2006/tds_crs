@@ -21,16 +21,21 @@
             :class="{
               'text-yellow-600': po.disposisi_po === 0,
               'text-orange-600': po.disposisi_po === 1,
-              'text-red-600': po.disposisi_po === 2
+              'text-red-600': po.disposisi_po === 2,
+              'text-green-600': po.disposisi_po === 4
             }"
           >
-            {{
-              po.disposisi_po === 0
-                ? 'Draft'
-                : po.disposisi_po === 1
-                ? 'Menunggu Verifikasi CFO'
-                : 'Menunggu Verifikasi CEO'
-            }}
+          {{
+      po.disposisi_po === 0
+        ? 'Draft'
+        : po.disposisi_po === 1
+        ? 'Menunggu Verifikasi CFO'
+        : po.disposisi_po === 2
+        ? 'Menunggu Verifikasi CEO'
+        : po.disposisi_po === 4
+        ? 'Sudah Diverifikasi CEO'
+        : '-'
+    }}
           </span>
         </div>
       </div>
