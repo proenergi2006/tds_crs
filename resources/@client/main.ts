@@ -45,3 +45,4 @@ router.afterEach(to => {
   const base = to.meta.title || (typeof to.name === 'string' ? to.name : '')
   document.getElementById('app-title')!.textContent = `Halaman ${base}`
 })
+

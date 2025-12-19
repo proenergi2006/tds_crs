@@ -258,10 +258,10 @@
 
   {{-- TTD JIKA TANPA TERMS --}}
   @if(!$hasTerms)
-  <table class="sig-table" style="margin-top:15mm">
+  <table class="sig-table" style="margin-top:37mm">
     <tr>
       <td class="label">Menyetujui,<br>PT. Tri Daya Selaras</td>
-      <td class="label t-right">{{ strtoupper(optional($po->vendor)->nama_vendor) }}</td>
+      <td class="label t-right"></td>
     </tr>
     <tr>
       <td class="signbox">
@@ -273,7 +273,7 @@
     </tr>
     <tr>
       <td class="name">Vica Krisdianatha<div class="role">Direktur Utama</div></td>
-      <td class="name t-right">Direktur</td>
+      <td class="name t-right"></td>
     </tr>
   </table>
   @endif
