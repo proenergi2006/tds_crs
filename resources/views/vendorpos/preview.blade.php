@@ -281,6 +281,8 @@
 
 
 
+
+
 {{-- <div class="page-footer">
   <div class="inner">
     <div class="addr">
@@ -347,7 +349,7 @@
     <tr>
       <td class="signbox">
         @if(!empty($qrBase64))
-          <img src="{{ $qrBase64 }}" class="qr" alt="QR">
+          <img src="{{ $qrBase64 }}" class="qr">
         @endif
       </td>
       <td class="signbox t-right"></td>

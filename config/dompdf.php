@@ -48,6 +48,7 @@ return [
         'font_dir' => storage_path('fonts'), // advised by dompdf (https://github.com/dompdf/dompdf/pull/782)
         'isHtml5ParserEnabled' => true,
         'isRemoteEnabled'      => true,
+        'image_driver' => 'gd',
         /**
          * The location of the DOMPDF font cache directory
          *

@@ -6,9 +6,14 @@ use App\Models\VendorPo;
 use App\Models\Cabang;
 use App\Models\Terminal;
 use Illuminate\Http\Request;
+
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Writer\PngWriter;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\ErrorCorrectionLevel;
+
 use PDF;
-// **Tambahkan ini:**
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
+
 
 class VendorPoController extends Controller
 {
@@ -147,25 +152,92 @@ class VendorPoController extends Controller
 }
 
 
+// public function preview($id)
+// {
+//     $po = VendorPo::with(['vendor','terminal','produks.produk','produks.produk.ukuran.satuan', 'produks.produk.jenis'])->findOrFail($id);
+
+//     // ambil dari public/images
+//     $leftPath  = public_path('images/tds.png');
+//     $rightPath = public_path('images/logo_prodiesel.png');
+
+//     // ubah ke data URI (base64) — tahan banting untuk Dompdf
+//     $logoLeft  = file_exists($leftPath)  ? 'data:image/png;base64,'.base64_encode(file_get_contents($leftPath))  : null;
+//     $logoRight = file_exists($rightPath) ? 'data:image/png;base64,'.base64_encode(file_get_contents($rightPath)) : null;
+
+//     return Pdf::loadView('vendorpos.preview', compact('po','logoLeft','logoRight'))
+//         ->setPaper('a4','portrait')
+//         ->setOptions([
+//             'chroot'          => public_path(), // aman
+//             'isRemoteEnabled' => true,
+//         ])->stream("PO.pdf");
+// }
+
 public function preview($id)
 {
-    $po = VendorPo::with(['vendor','terminal','produks.produk','produks.produk.ukuran.satuan', 'produks.produk.jenis'])->findOrFail($id);
+    $po = VendorPo::with([
+        'vendor',
+        'terminal',
+        'produks.produk',
+        'produks.produk.ukuran.satuan',
+        'produks.produk.jenis'
+    ])->findOrFail($id);
 
-    // ambil dari public/images
+    // Logo
     $leftPath  = public_path('images/tds.png');
     $rightPath = public_path('images/logo_prodiesel.png');
 
-    // ubah ke data URI (base64) — tahan banting untuk Dompdf
-    $logoLeft  = file_exists($leftPath)  ? 'data:image/png;base64,'.base64_encode(file_get_contents($leftPath))  : null;
-    $logoRight = file_exists($rightPath) ? 'data:image/png;base64,'.base64_encode(file_get_contents($rightPath)) : null;
+    $logoLeft  = file_exists($leftPath)
+        ? 'data:image/png;base64,' . base64_encode(file_get_contents($leftPath))
+        : null;
 
-    return Pdf::loadView('vendorpos.preview', compact('po','logoLeft','logoRight'))
-        ->setPaper('a4','portrait')
-        ->setOptions([
-            'chroot'          => public_path(), // aman
-            'isRemoteEnabled' => true,
-        ])->stream("PO.pdf");
+    $logoRight = file_exists($rightPath)
+        ? 'data:image/png;base64,' . base64_encode(file_get_contents($rightPath))
+        : null;
+
+    /**
+     * ==========================
+     * QR SIGNATURE – DIREKTUR
+     * ==========================
+     */
+    $qrPayload = json_encode([
+        'type'      => 'APPROVAL_PO',
+        'po_number' => $po->nomor_po,
+        'approved'  => 'Vica Krisdianatha',
+        'role'      => 'Direktur Utama',
+        'date'      => now()->format('Y-m-d H:i:s'),
+    ]);
+    
+    $result = Builder::create()
+        ->writer(new PngWriter())
+        ->data($qrPayload)
+        ->encoding(new Encoding('UTF-8'))
+        ->errorCorrectionLevel(ErrorCorrectionLevel::High) // ⬅️ INI KUNCI-NYA
+        ->size(220)
+        ->margin(5)
+        ->build();
+    
+    $qrBase64 = 'data:image/png;base64,' . base64_encode($result->getString());
+    
+    $filename = 'PO-' . str_replace(['/', '\\'], '-', $po->nomor_po) . '.pdf';
+
+    return Pdf::loadView(
+        'vendorpos.preview',
+        compact('po', 'logoLeft', 'logoRight', 'qrBase64')
+    )
+    ->setPaper('a4', 'portrait')
+    ->setOptions([
+        'isRemoteEnabled' => true,
+        'defaultFont' => 'DejaVu Sans',
+    ])
+    ->stream($filename);
+    
 }
+
+
+
+
+
+
 
 /**
  * Endpoint publik untuk menampilkan data PO (JSON).
