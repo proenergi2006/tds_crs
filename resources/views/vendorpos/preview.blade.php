@@ -215,7 +215,7 @@
               — {{ optional($it->produk->ukuran)->nama_ukuran }} {{ optional($it->produk->ukuran->satuan)->nama_satuan }}
             @endif
           </td>
-          <td class="t-right">{{ number_format($qty,0,',','.') }}</td>
+          <td class="t-right">{{ number_format($qty, 2, ',', '.') }}</td>
           <td class="t-right">{{ $rp0($price) }}</td>
           <td class="t-center">{{ rtrim(rtrim(number_format($disc,2,'.',''), '0'), '.') }}</td>
           <td class="t-center">{{ $taxcd }}</td>
