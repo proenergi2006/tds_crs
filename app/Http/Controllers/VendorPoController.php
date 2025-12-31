@@ -207,22 +207,27 @@ public function preview($id)
         'date'      => now()->format('Y-m-d H:i:s'),
     ]);
     
-    $result = Builder::create()
-        ->writer(new PngWriter())
-        ->data($qrPayload)
-        ->encoding(new Encoding('UTF-8'))
-        ->errorCorrectionLevel(ErrorCorrectionLevel::High) // ⬅️ INI KUNCI-NYA
-        ->size(220)
-        ->margin(5)
-        ->build();
+    // $result = Builder::create()
+    //     ->writer(new PngWriter())
+    //     ->data($qrPayload)
+    //     ->encoding(new Encoding('UTF-8'))
+    //     ->errorCorrectionLevel(ErrorCorrectionLevel::High) // ⬅️ INI KUNCI-NYA
+    //     ->size(220)
+    //     ->margin(5)
+    //     ->build();
     
-    $qrBase64 = 'data:image/png;base64,' . base64_encode($result->getString());
+    // $qrBase64 = 'data:image/png;base64,' . base64_encode($result->getString());
     
     $filename = 'PO-' . str_replace(['/', '\\'], '-', $po->nomor_po) . '.pdf';
 
+    // return Pdf::loadView(
+    //     'vendorpos.preview',
+    //     compact('po', 'logoLeft', 'logoRight', 'qrBase64')
+    // )
+
     return Pdf::loadView(
         'vendorpos.preview',
-        compact('po', 'logoLeft', 'logoRight', 'qrBase64')
+        compact('po', 'logoLeft', 'logoRight')
     )
     ->setPaper('a4', 'portrait')
     ->setOptions([
