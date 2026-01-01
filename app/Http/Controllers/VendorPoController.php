@@ -6,6 +6,7 @@ use App\Models\VendorPo;
 use App\Models\Cabang;
 use App\Models\Terminal;
 use Illuminate\Http\Request;
+use App\Models\Vendor;
 
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
@@ -35,6 +36,7 @@ class VendorPoController extends Controller
 {
     // Ambil id_cabang berdasarkan id_terminal (dari terminal)
     $terminal = Terminal::find($request->id_terminal);
+    $vendor = Vendor::findOrFail($request->id_vendor); 
     $cabang = Cabang::find($terminal->id_cabang);
 
     // Ambil nomor PO terakhir dari tabel cabangs
@@ -50,7 +52,7 @@ class VendorPoController extends Controller
     $tahun = substr(date('Y'), -2);
 
     // Format nomor PO baru
-    $nomorPo = str_pad($newNoPo, 3, '0', STR_PAD_LEFT)  . '/' . $terminal->inisial. '/' . $cabang->inisial_cabang. '/'  . $bulanRomawi . '/' . $tahun;
+    $nomorPo = str_pad($newNoPo, 3, '0', STR_PAD_LEFT)  . '/' . $vendor->inisial. '/' . $cabang->inisial_cabang. '/'  . $bulanRomawi . '/' . $tahun;
 
     // Menyimpan data Vendor PO
     $data = [
