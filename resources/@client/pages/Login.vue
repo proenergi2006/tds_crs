@@ -20,6 +20,7 @@ const auth     = useAuthStore()
 
 // hanya tangani toast logout di halaman login saja
 onMounted(() => {
+  // toast logout
   if (route.name === 'login' && route.query.logged_out === '1') {
     Swal.fire({
       icon: 'success',
@@ -29,10 +30,47 @@ onMounted(() => {
       showConfirmButton: false,
       timer: 2000,
     })
-    // hilangkan query agar tidak muncul lagi
     router.replace({ name: 'login', query: {} })
   }
+
+  // 🔑 AMBIL EMAIL TERSIMPAN
+  const savedEmail = localStorage.getItem('remember_email')
+  if (savedEmail) {
+    email.value = savedEmail
+    remember.value = true
+  }
 })
+
+
+
+// async function onSubmit() {
+//   errorMsg.value = ''
+//   try {
+//     const { data } = await axios.post('/api/login', {
+//       email:    email.value,
+//       password: password.value,
+//       remember: remember.value,
+//     })
+
+//     console.log('Login response:', data)
+
+//     if (data.two_factor_required) {
+//       return router.push({
+//         name: 'two-factor',
+//         query: { user_id: String(data.user_id) }
+//       })
+//     }
+
+//     // berhasil login
+//     localStorage.setItem('access_token', data.access_token)
+//     axios.defaults.headers.common['Authorization'] = `Bearer ${data.access_token}`
+//     await auth.fetchUser()
+//     router.push({ name: 'dashboard-overview-1' })
+//   }
+//   catch (e: any) {
+//     errorMsg.value = e.response?.data?.message || 'Login gagal'
+//   }
+// }
 
 async function onSubmit() {
   errorMsg.value = ''
@@ -43,8 +81,6 @@ async function onSubmit() {
       remember: remember.value,
     })
 
-    console.log('Login response:', data)
-
     if (data.two_factor_required) {
       return router.push({
         name: 'two-factor',
@@ -52,9 +88,17 @@ async function onSubmit() {
       })
     }
 
-    // berhasil login
+    // 🔑 SIMPAN EMAIL JIKA REMEMBER
+    if (remember.value) {
+      localStorage.setItem('remember_email', email.value)
+    } else {
+      localStorage.removeItem('remember_email')
+    }
+
+    // simpan token
     localStorage.setItem('access_token', data.access_token)
     axios.defaults.headers.common['Authorization'] = `Bearer ${data.access_token}`
+
     await auth.fetchUser()
     router.push({ name: 'dashboard-overview-1' })
   }
@@ -62,6 +106,7 @@ async function onSubmit() {
     errorMsg.value = e.response?.data?.message || 'Login gagal'
   }
 }
+
 </script>
 
 <template>
@@ -113,12 +158,16 @@ async function onSubmit() {
               <FormInput
                 v-model="email"
                 type="text"
+                name="email"
+                autocomplete="username"
                 placeholder="Email"
                 class="block px-4 py-3 min-w-full xl:min-w-[350px]"
               />
               <FormInput
                 v-model="password"
                 type="password"
+                 name="password"
+                autocomplete="current-password"
                 placeholder="Password"
                 class="block px-4 py-3 mt-4 min-w-full xl:min-w-[350px]"
               />
