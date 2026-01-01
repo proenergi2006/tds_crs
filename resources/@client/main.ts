@@ -29,6 +29,20 @@ app.component('Vue3SignaturePad', Vue3SignaturePad);
 
 app.mount("#app");
 
+const auth = useAuthStore()
+
+const idleEvents = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart']
+
+idleEvents.forEach(event => {
+  window.addEventListener(
+    event,
+    () => {
+      auth.resetIdleTimer()
+    },
+    { passive: true }
+  )
+})
+
 
 // setelah mount, fetch user jika ada token
 if (token) {
