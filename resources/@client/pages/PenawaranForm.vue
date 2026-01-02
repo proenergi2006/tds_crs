@@ -484,7 +484,14 @@
           <div>
             <label class="block text-sm font-medium mb-1">Toleransi Penyusutan (%)</label>
             <div class="relative">
-              <input v-model="form.toleransi_penyusutan" @input="formatNumeric(form, 'toleransi_penyusutan', $event)" type="text" inputmode="numeric" class="w-full border rounded p-2 pr-8 text-right" placeholder="0" />
+              <input
+  v-model="form.toleransi_penyusutan"
+  @input="formatDecimalInput(form, 'toleransi_penyusutan', $event)"
+  type="text"
+  inputmode="decimal"
+  class="w-full border rounded p-2 pr-8 text-right"
+  placeholder="0"
+/>
               <span class="absolute right-3 top-2 text-gray-500">%</span>
             </div>
           </div>
@@ -497,14 +504,28 @@
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">Refund</label>
-            <input v-model="form.refund" @input="formatNumeric(form, 'refund', $event)" type="text" inputmode="numeric" class="w-full border rounded p-2 text-right" placeholder="0" />
+            <input
+  v-model="form.refund"
+  @input="formatDecimalInput(form, 'refund', $event)"
+  type="text"
+  inputmode="decimal"
+  class="w-full border rounded p-2 text-right"
+  placeholder="0"
+/>
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium mb-1">Other Cost</label>
-            <input v-model="form.other_cost" @input="formatNumeric(form, 'other_cost', $event)" type="text" inputmode="numeric" class="w-full border rounded p-2 text-right" placeholder="0" />
+            <input
+  v-model="form.other_cost"
+  @input="formatDecimalInput(form, 'other_cost', $event)"
+  type="text"
+  inputmode="decimal"
+  class="w-full border rounded p-2 text-right"
+  placeholder="0"
+/>
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">Keterangan</label>
@@ -545,13 +566,14 @@
                 <td class="px-3 py-2 border"></td>
                 <td class="px-3 py-2 border text-right">
                   <input
-                    v-model="form.oat"
-                    @input="form.oat = formatDecimal(form.oat)"
-                    type="text"
-                    inputmode="decimal"
-                    class="w-full border rounded p-1 text-right"
-                    placeholder="0"
-                  />
+  v-model="form.oat"
+  @input="formatNumeric(form, 'oat', $event)"
+  type="text"
+  inputmode="numeric"
+  class="w-full border rounded p-1 text-right"
+  placeholder="0"
+/>
+
                 </td>
               </tr>
 
@@ -585,7 +607,7 @@
         </div>
 
         <!-- Ringkasan bawah -->
-        <div v-if="canSeeHarga" class="bg-slate-50 p-4 rounded-lg text-sm">
+        <!-- <div v-if="canSeeHarga" class="bg-slate-50 p-4 rounded-lg text-sm">
           <div class="flex justify-between mb-1">
             <span>Subtotal (setelah diskon):</span>
             <span class="font-medium">{{ formatCurrency(grandTotalHargaTebusSetelahDiskon) }}</span>
@@ -602,7 +624,7 @@
             <span>Total Keseluruhan:</span>
             <span class="font-semibold">{{ formatCurrency(grandTotalWithOAT) }}</span>
           </div>
-        </div>
+        </div> -->
 
 
         
@@ -666,39 +688,44 @@ interface ItemLine {
 const form = reactive({
   id_customer: '' as number | '',
   id_cabang: '' as number | '',
-  nomor_penawaran: '' as string,
-  masa_berlaku: '' as string,
-  sampai_dengan: '' as string,
+  nomor_penawaran: '',
+  masa_berlaku: '',
+  sampai_dengan: '',
   items: [] as ItemLine[],
-  tipe_pembayaran: '' as string,
-  order_method: '' as string,
-  dp_persen: '' as string,
-  dp_keterangan: '' as string,
-  repayment_persen: '' as string,
-  repayment_hari: '' as string,
-  toleransi_penyusutan: '' as string,
-  lokasi_pengiriman: '' as string,
-  metode: '' as string,
-  type_pengiriman: '' as string, 
-  refund: '' as string,
-  other_cost: '' as string,
-  perhitungan: '' as string,
-  keterangan: '' as string,
-  catatan: '' as string,
-  syarat_ketentuan: '' as string,
+
+  tipe_pembayaran: '',
+  order_method: '',
+  dp_persen: '',
+  dp_keterangan: '',
+  repayment_persen: '',
+  repayment_hari: '',
+  toleransi_penyusutan: '',
+  lokasi_pengiriman: '',
+
+  metode: '',
+  type_pengiriman: '',
+  refund: '',
+  other_cost: '',
+  perhitungan: '',
+  keterangan: '',
+  catatan: '',
+  syarat_ketentuan: '',
+
   pengiriman_via: 'truck+kapal',
   ukuran_dasar: '',
-  discount: '' as string, // NOMINAL
-  oat: '' as string,      // OAT per volume (diisi otomatis dari komputasi)
+  discount: '',
+  oat: '',
   jenis_penawaran: '1',
-  kepada: '' as string,
-nama: '' as string,
-jabatan: '' as string,
-telepon: '' as string,
-alamat: '' as string,
-abrasi: '' as string,
-harga_dasar: '' as string,
-});
+
+  kepada: '',
+  nama: '',
+  jabatan: '',
+  telepon: '',
+  alamat: '',
+  abrasi: '',
+
+  harga_dasar: ''
+})
 
 // ======== VALIDASI ========
 const errors = reactive<Record<string, boolean>>({});
@@ -733,10 +760,10 @@ function toFloat(v: string | number): number {
 }
 
 function toNum(v: string | number): number {
-  if (typeof v === 'number') return v;
-  const s = (v || '').toString().replace(/\./g, '').replace(',', '.');
-  const n = parseFloat(s);
-  return Number.isFinite(n) ? n : 0;
+  if (typeof v === 'number') return v
+  const s = (v || '').toString().replace(/\./g, '').replace(',', '.')
+  const n = parseFloat(s)
+  return Number.isFinite(n) ? n : 0
 }
 function formatDecimal(v: string | number): string {
   const n = toNum(v);
@@ -744,16 +771,31 @@ function formatDecimal(v: string | number): string {
   return n ? String(n) : '';
 }
 
-// === Perhitungan Harga Dasar + OAT + PPN ===
-const ppnHargaDasar = computed(() => {
-  const dasar = toNum(form.harga_dasar || 0)
-  const oat = toNum(form.oat || 0)
-  return Math.round((dasar + oat) * 0.11)
+function formatDecimalInput(obj: any, field: string, e: Event) {
+  let val = (e.target as HTMLInputElement).value
+
+  // hanya angka & satu titik
+  val = val.replace(/[^0-9.]/g, '')
+
+  // cegah lebih dari 1 titik
+  const parts = val.split('.')
+  if (parts.length > 2) {
+    val = parts[0] + '.' + parts.slice(1).join('')
+  }
+
+  obj[field] = val
+}
+
+const dppHargaDasar = computed(() => {
+  return hargaDasarNumber.value + oatPerVolume.value
 })
+
+const ppnHargaDasar = computed(() => {
+  return Math.round(dppHargaDasar.value * 0.11)
+})
+
 const grandTotalHargaDasar = computed(() => {
-  const dasar = toNum(form.harga_dasar || 0)
-  const oat = toNum(form.oat || 0)
-  return dasar + oat + ppnHargaDasar.value
+  return dppHargaDasar.value + ppnHargaDasar.value
 })
 
 function validateForm(): boolean {
@@ -920,51 +962,51 @@ const totalPersenNumber = computed(() =>
 );
 const totalPersenDisplay = computed(() => totalPersenNumber.value.toLocaleString('id-ID'));
 
+const hargaDasarNumber = computed(() => toNum(form.harga_dasar || 0))
+const oatPerVolume = computed(() => toNum(form.oat || 0))
+
 const totalVolumePO = computed(() =>
-  form.items.reduce((sum, it) => sum + (parseInt((it.volume_order || '').replace(/\./g, ''), 10) || 0), 0)
-);
+  form.items.reduce(
+    (sum, it) =>
+      sum + (parseInt((it.volume_order || '').replace(/\./g, ''), 10) || 0),
+    0
+  )
+)
 const totalVolume = computed(() => totalVolumePO.value.toLocaleString('id-ID'));
 
 function lineTotal(item: ItemLine): number {
-  const v = parseInt((item.volume_order || '').replace(/\./g, ''), 10) || 0;
-  const h = parseInt((item.harga_tebus || '').replace(/\./g, ''), 10) || 0;
-  return v * h;
+  const v = parseInt((item.volume_order || '').replace(/\./g, ''), 10) || 0
+  const h = parseInt((item.harga_tebus || '').replace(/\./g, ''), 10) || 0
+  return v * h
 }
 
-const subtotal = computed(() => form.items.reduce((sum, it) => sum + lineTotal(it), 0));
+const subtotal = computed(() =>
+  form.items.reduce((sum, it) => sum + lineTotal(it), 0)
+)
 const grandTotalHargaTebus = computed(() => subtotal.value);
 
 // Diskon nominal
 const totalDiskon = computed(() => {
-  const diskonNom = parseInt((form.discount || '0').replace(/\./g, ''), 10) || 0;
-  return Math.min(Math.max(diskonNom, 0), grandTotalHargaTebus.value);
-});
-const grandTotalHargaTebusSetelahDiskon = computed(() =>
-  Math.max(grandTotalHargaTebus.value - totalDiskon.value, 0)
-);
+  const d = parseInt((form.discount || '0').replace(/\./g, ''), 10) || 0
+  return Math.min(Math.max(d, 0), subtotal.value)
+})
+const grandTotalHargaTebusSetelahDiskon = computed(
+  () => subtotal.value - totalDiskon.value
+)
 
-// OAT
-// const oatPerVolume = computed(() => {
-//   if (form.metode === 'FOB') return 0;
-//   if (form.metode === 'CIF') return oaKapal.value || 0;
-//   if (form.metode === 'DAP') return (oaKapal.value || 0) + (oaTruck.value || 0);
-//   return 0;
-// });
-// const oatPerVolumeDisplay = computed(() =>
-//   oatPerVolume.value.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
-// );
-// watch(oatPerVolume, (val) => {
-//   form.oat = val.toString(); // untuk tampilan/hidden field
-// });
-
-const totalOAT = computed(() => (oatPerVolumeManual.value || 0) * (totalVolumePO.value || 0));
+const totalOAT = computed(() => oatPerVolume.value * totalVolumePO.value)
 
 
 // PPN & Grand total
-const ppn11 = computed(() => Math.round(grandTotalHargaTebusSetelahDiskon.value * 0.11));
-const grandTotalWithOAT = computed(() =>
-  grandTotalHargaTebusSetelahDiskon.value + totalOAT.value + ppn11.value
-);
+const ppn11 = computed(() =>
+  Math.round(grandTotalHargaTebusSetelahDiskon.value * 0.11)
+)
+const grandTotalWithOAT = computed(
+  () =>
+    grandTotalHargaTebusSetelahDiskon.value +
+    ppn11.value +
+    totalOAT.value
+)
 
 function addItem() {
   form.items.push({ id_produk: '', volume_order: '', harga_tebus: '', persen: '' });
@@ -973,12 +1015,12 @@ function removeItem(idx: number) {
   form.items.splice(idx, 1);
 }
 
-function formatNumeric(obj: any, field: keyof ItemLine | keyof typeof form, e: Event) {
-  const raw = (e.target as HTMLInputElement).value.replace(/[^\d]/g, '');
-  const num = parseInt(raw, 10);
-  const formatted = isNaN(num) ? '' : num.toLocaleString('id-ID');
-  (obj as any)[field] = formatted;
+function formatNumeric(obj: any, field: any, e: Event) {
+  const raw = (e.target as HTMLInputElement).value.replace(/[^\d]/g, '')
+  const num = parseInt(raw, 10)
+  obj[field] = isNaN(num) ? '' : num.toLocaleString('id-ID')
 }
+
 
 async function checkHarga(item: ItemLine) {
   if (!item.id_produk || !form.masa_berlaku) return;
@@ -1004,33 +1046,61 @@ async function fetchPenawaran() {
   try {
     const { data } = await axios.get(`/api/penawarans/${idParam}`);
     Object.assign(form, {
-      id_customer: data.id_customer,
-      id_cabang: data.id_cabang,
-      nomor_penawaran: data.nomor_penawaran,
-      masa_berlaku: data.masa_berlaku,
-      sampai_dengan: data.sampai_dengan,
-      tipe_pembayaran: data.tipe_pembayaran || '',
-      order_method: data.order_method || '',
-      toleransi_penyusutan: data.toleransi_penyusutan?.toString() || '',
-      lokasi_pengiriman: data.lokasi_pengiriman || '',
-     type_pengiriman : data.type_pengiriman || '',
-      metode: data.metode || '',
-      refund: data.refund?.toString() || '',
-      other_cost: data.other_cost?.toString() || '',
-      perhitungan: data.perhitungan || '',
-      keterangan: data.keterangan || '',
-      catatan: data.catatan || '',
-      syarat_ketentuan: data.syarat_ketentuan || '',
-      pengiriman_via: data.pengiriman_via || 'truck+kapal',
-      kepada: data.kepada || '',
-nama: data.nama || '',
-jabatan: data.jabatan || '',
-telepon: data.telepon || '',
-alamat: data.alamat || '',
-abrasi: data.alamat || '',
-    });
+  id_customer: data.id_customer,
+  id_cabang: data.id_cabang,
+  nomor_penawaran: data.nomor_penawaran,
+  masa_berlaku: data.masa_berlaku,
+  sampai_dengan: data.sampai_dengan,
 
-    form.oat = formatDecimal(data.oat ?? '');
+  tipe_pembayaran: data.tipe_pembayaran || '',
+  order_method: data.order_method || '',
+
+  // ✅ CUSTOM PAYMENT (INI YANG KURANG)
+  dp_persen: formatInt(data.dp_persen),
+  dp_keterangan: data.dp_keterangan || '',
+  repayment_persen: formatInt(data.repayment_persen),
+  repayment_hari: formatInt(data.repayment_hari),
+
+  toleransi_penyusutan: data.toleransi_penyusutan
+  ? String(Number(data.toleransi_penyusutan))
+  : '',
+
+  refund: data.refund != null ? String(Number(data.refund)) : '',
+other_cost: data.other_cost != null ? String(Number(data.other_cost)) : '',
+
+
+  
+  lokasi_pengiriman: data.lokasi_pengiriman || '',
+  type_pengiriman: data.type_pengiriman || '',
+  metode: data.metode || '',
+  
+  perhitungan: data.perhitungan || '',
+  keterangan: data.keterangan || '',
+  catatan: data.catatan || '',
+  syarat_ketentuan: data.syarat_ketentuan || '',
+  pengiriman_via: data.pengiriman_via || 'truck+kapal',
+
+  // ✅ KONTAK TUJUAN
+  kepada: data.kepada || '',
+  nama: data.nama || '',
+  jabatan: data.jabatan || '',
+  telepon: data.telepon || '',
+  alamat: data.alamat || '',
+
+  // ✅ PERBAIKAN BUG
+  abrasi: data.abrasi || '',
+
+  // ✅ HARGA DASAR (INI YANG MEMBUAT TABEL BAWAH KOSONG)
+  harga_dasar: data.harga_dasar != null
+  ? Number(data.harga_dasar).toLocaleString('id-ID', {
+      maximumFractionDigits: 0
+    })
+  : '',
+
+
+})
+
+form.oat = Number(data.oat).toLocaleString('id-ID'),
     form.items = data.items.map((it: any) => ({
       id_produk: it.id_produk,
       volume_order: it.volume_order?.toLocaleString('id-ID') || '',
@@ -1097,8 +1167,8 @@ abrasi: form.abrasi,
       harga_tebus_setelah_diskon: grandTotalHargaTebusSetelahDiskon.value,
 
       harga_dasar: Number(toNum(form.harga_dasar || 0)),
-  ppn_harga_dasar: ppnHargaDasar.value,
-  grand_total_harga_dasar: grandTotalHargaDasar.value,
+       ppn_harga_dasar: ppnHargaDasar.value,
+      grand_total_harga_dasar: grandTotalHargaDasar.value,
 
       // OAT per volume
       oat: Number(oatPerVolumeManual.value),
@@ -1135,4 +1205,17 @@ function formatCurrency(v: number | string = 0) {
   const n = typeof v === 'string' ? parseFloat(v) : v;
   return !isNaN(n) ? `Rp. ${n.toLocaleString('id-ID')}` : '-';
 }
-</script>
+
+
+function formatInt(v: number | string | null | undefined): string {
+  const n =
+    typeof v === 'string'
+      ? parseInt(v.replace(/\D/g, ''), 10)
+      : v ?? 0
+  return Number.isFinite(n) ? n.toLocaleString('id-ID') : ''
+}
+
+
+</script> 
+
+

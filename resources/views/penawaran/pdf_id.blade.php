@@ -235,9 +235,28 @@
         <td class="value">{{ $rupiah($penawaran->harga_dasar) }} <span style="color:#666">(Harga belum termasuk PPN 11%)</span></td>
       </tr>
       <tr>
-        <td class="no">4.</td><td class="label"><b>Metode Pembayaran</b></td><td class="colon">:</td>
-        <td class="value"><b>{{ $penawaran->tipe_pembayaran }}</b></td>
+        <td class="no">4.</td>
+        <td class="label"><b>Metode Pembayaran</b></td>
+        <td class="colon">:</td>
+        <td class="value">
+      
+          @if($penawaran->tipe_pembayaran === 'CUSTOM')
+            <div style="margin-top:4px">
+
+              DP {{ number_format($penawaran->dp_persen, 0) }}%
+              Repayment {{ number_format($penawaran->repayment_persen, 0) }}%
+              after {{ number_format($penawaran->repayment_hari, 0) }} days
+            </div>
+          @else
+            <div style="margin-top:4px">
+              <b>{{ $penawaran->tipe_pembayaran }}</b>
+            </div>
+          @endif
+      
+        </td>
       </tr>
+      
+      
       <tr>
         <td class="no">5.</td><td class="label"><b>Metode Pemesanan</b></td><td class="colon">:</td>
         <td class="value">{{ $penawaran->order_method}}</td>
@@ -255,7 +274,7 @@
      
       <tr>
         <td class="no">8.</td><td class="label"><b>Toleransi</b></td><td class="colon">:</td>
-        <td class="value">{{ $penawaran->toleransi_penyusutan ?? $defaultTolerance }}</td>
+        <td class="value">{{ $penawaran->toleransi_penyusutan ?? $defaultTolerance }} %</td>
       </tr>
       <tr>
         <td class="no">9.</td><td class="label"><b>Periode</b></td><td class="colon">:</td>
