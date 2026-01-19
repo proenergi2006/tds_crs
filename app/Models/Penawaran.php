@@ -96,5 +96,10 @@ class Penawaran extends Model
         return $this->belongsTo(\App\Models\User::class, 'user_id');
     }
 
+    public function ongkos()
+    {
+        return $this->hasMany(PenawaranOngkos::class, 'penawaran_id', 'id_penawaran');
+    }
+
     
 }

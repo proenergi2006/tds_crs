@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Penawaran;
 use App\Models\PenawaranItem;
+use App\Models\PenawaranOngkos;
 use App\Models\Cabang;
 use App\Models\Role;
 use App\Models\User;
@@ -277,6 +278,7 @@ private function saveQrSvgToStorage(string|array $payload, int $idPenawaran): ar
             'items.produk.jenis',
             'items.produk.ukuran.satuan',
             'produk_harga', // relasi baru
+            'ongkos',
         ])->findOrFail($id);
 
         if (!$penawaran->produk_harga && $penawaran->items->isNotEmpty()) {
@@ -300,8 +302,17 @@ private function saveQrSvgToStorage(string|array $payload, int $idPenawaran): ar
             'id_cabang'            => 'required|exists:cabangs,id_cabang',
             'masa_berlaku'         => 'required|date',
             'sampai_dengan'        => 'required|date|after_or_equal:masa_berlaku',
+
+                'ongkos' => 'nullable|array',
+            'ongkos.*.id_angkut_wilayah' => 'required|exists:wilayah_angkuts,id',
+            'ongkos.*.id_transportir' => 'required|exists:transportirs,id',
+            'ongkos.*.id_volume' => 'required|numeric|min:0',
+            'ongkos.*.ongkos' => 'required|numeric|min:0',
+
+
             'items'                => 'required|array|min:1',
             'items.*.id_produk'    => 'required|exists:produks,id_produk',
+            'items.*.persen' => 'required|numeric|min:0|max:100',
             'items.*.volume_order' => 'required|numeric|min:0',
             'items.*.harga_tebus'  => 'required|numeric|min:0',
             'type_pengiriman' => 'nullable|in:PROJECT,RETAIL',
@@ -383,15 +394,32 @@ private function saveQrSvgToStorage(string|array $payload, int $idPenawaran): ar
             'created_by'                 => optional($request->user())->name,
         ]);
 
+       
+
         DB::beginTransaction();
         try {
             $penawaran = Penawaran::create($data);
+
+            if (!empty($data['ongkos'])) {
+                foreach ($data['ongkos'] as $o) {
+                    $penawaran->ongkos()->create([
+                         'penawaran_id'   => $penawaran->id_penawaran, // 🔥 WAJIB
+                       'wilayah_id'     => $o['id_angkut_wilayah'], // ✅ mapping
+                        'transportir_id' => $o['id_transportir'],
+                        'volume'         => $o['id_volume'],
+                        'ongkos'         => $o['ongkos'],
+                      
+                    ]);
+                }
+            }
+        
 
             foreach ($data['items'] as $it) {
                 PenawaranItem::create([
                     'id_penawaran' => $penawaran->id_penawaran,
                     'id_produk'    => $it['id_produk'],
                     'volume_order' => $it['volume_order'],
+                    'persen'       => $it['persen'],
                     'harga_tebus'  => $it['harga_tebus'],
                     'jumlah_harga' => $it['volume_order'] * $it['harga_tebus'],
                 ]);
@@ -446,8 +474,17 @@ $penawaran->forceFill(['qr_code' => $saved['url']])->save();
             'id_cabang'            => 'required|exists:cabangs,id_cabang',
             'masa_berlaku'         => 'required|date',
             'sampai_dengan'        => 'required|date|after_or_equal:masa_berlaku',
+
+          'ongkos' => 'nullable|array',
+          'ongkos.*.id_angkut_wilayah' => 'required|exists:wilayah_angkuts,id',
+          'ongkos.*.id_transportir' => 'required|exists:transportirs,id',
+          'ongkos.*.id_volume' => 'required|numeric|min:0',
+            'ongkos.*.ongkos' => 'required|numeric|min:0',
+
+
             'items'                => 'required|array|min:1',
             'items.*.id_produk'    => 'required|exists:produks,id_produk',
+            'items.*.persen' => 'required|numeric|min:0|max:100',
             'items.*.volume_order' => 'required|numeric|min:0',
             'items.*.harga_tebus'  => 'required|numeric|min:0',
             'tipe_pembayaran'      => 'nullable|string|max:100',
@@ -517,9 +554,26 @@ $penawaran->forceFill(['qr_code' => $saved['url']])->save();
         $data['updated_at']                 = now();
         $data['updated_by']                 = $request->user()->name ?? null;
 
+
+        
+
         DB::beginTransaction();
         try {
             $penawaran->update($data);
+
+            $penawaran->ongkos()->delete();
+
+        if ($request->has('ongkos')) {
+            foreach ($request->ongkos as $o) {
+                $penawaran->ongkos()->create([
+                    'penawaran_id'   => $penawaran->id_penawaran, // 🔥 WAJIB
+                    'wilayah_id'     => $o['id_angkut_wilayah'], // ✅ mapping
+                        'transportir_id' => $o['id_transportir'],
+                        'volume'         => $o['id_volume'],
+                        'ongkos'         => $o['ongkos'],
+                ]);
+            }
+        }
 
             PenawaranItem::where('id_penawaran', $penawaran->id_penawaran)->delete();
             foreach ($data['items'] as $it) {
@@ -527,6 +581,7 @@ $penawaran->forceFill(['qr_code' => $saved['url']])->save();
                     'id_penawaran' => $penawaran->id_penawaran,
                     'id_produk'    => $it['id_produk'],
                     'volume_order' => $it['volume_order'],
+                    'persen' => $it['persen'],
                     'harga_tebus'  => $it['harga_tebus'],
                     'jumlah_harga' => $it['volume_order'] * $it['harga_tebus'],
                 ]);
@@ -597,40 +652,177 @@ public function destroy($id)
     // }
 
     /** PATCH /api/penawarans/{id}/ajukan — kirim email ke BM */
-    public function ajukan($id)
-    {
-        $penawaran = Penawaran::with(['customer','cabang'])->findOrFail($id);
+    // public function ajukan($id)
+    // {
+    //     $penawaran = Penawaran::with(['customer','cabang'])->findOrFail($id);
 
-        if ($penawaran->status !== 'draft') {
-            return response()->json(['message' => 'Penawaran sudah diajukan sebelumnya'], 400);
-        }
+    //     if ($penawaran->status !== 'draft') {
+    //         return response()->json(['message' => 'Penawaran sudah diajukan sebelumnya'], 400);
+    //     }
 
+    //     $penawaran->update([
+    //         'status'              => 'waiting_branch_manager',
+    //         'disposisi_penawaran' => '2',
+    //         'updated_at'          => now(),
+    //     ]);
+
+    //     // Ambil email Branch Manager (id_role = 8)
+    //     $recipients = \App\Models\User::where('id_role', 8)
+    //     ->whereNotNull('email')
+    //     ->pluck('email')
+    //     ->toArray();
+
+
+    //    if (!empty($recipients)) {
+    //     try {
+    //         $detailUrl = $this->detailUrl($penawaran->id_penawaran);
+
+    //         Mail::to($recipients)->send(
+    //             new PenawaranSubmittedMail($penawaran, $detailUrl)
+    //         );
+    //     } catch (\Throwable $e) {
+    //         report($e); // jangan gagalkan proses utama
+    //     }
+    // }
+
+    //     return response()->json(['message' => 'Penawaran berhasil diajukan']);
+    // }
+
+    /** PATCH /api/penawarans/{id}/ajukan — kirim email ke BM */
+public function ajukan($id)
+{
+    $penawaran = Penawaran::with(['customer', 'cabang'])->findOrFail($id);
+
+    if ($penawaran->status !== 'draft') {
+        return response()->json([
+            'message' => 'Penawaran sudah diajukan sebelumnya'
+        ], 400);
+    }
+
+    DB::beginTransaction();
+    try {
+        // 1) update status penawaran
         $penawaran->update([
             'status'              => 'waiting_branch_manager',
             'disposisi_penawaran' => '2',
             'updated_at'          => now(),
         ]);
 
-        // kirim ke semua BM
-        $recipients = $this->getRoleEmails(['branch manager', 'Branch Manager', 'BM']);
-        if (!empty($recipients)) {
-            try {
-                $detailUrl = $this->detailUrl($penawaran->id_penawaran);
-                Mail::to($recipients)->send(new PenawaranSubmittedMail($penawaran, $detailUrl));
-            } catch (\Throwable $e) {
-                report($e); // jangan gagalkan flow
-            }
+        // 2) ambil email BM (id_role = 8)
+        $recipients = User::query()
+            ->where('id_role', 8)
+            ->whereNotNull('email')
+            ->pluck('email')
+            ->map(fn($e) => trim((string)$e))
+            ->filter(fn($e) => $e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL))
+            ->unique()
+            ->values()
+            ->all();
+
+        // 3) log untuk debug
+        \Log::info('AJUKAN PENAWARAN - BM RECIPIENTS', [
+            'id_penawaran' => $penawaran->id_penawaran,
+            'nomor'        => $penawaran->nomor_penawaran,
+            'recipients'   => $recipients,
+        ]);
+
+        // 4) kalau BM kosong, jangan dianggap sukses kirim email
+        if (empty($recipients)) {
+            DB::commit();
+            return response()->json([
+                'message' => 'Penawaran berhasil diajukan, tetapi email BM tidak ditemukan (id_role=8).',
+            ], 200);
         }
 
-        return response()->json(['message' => 'Penawaran berhasil diajukan']);
+        // 5) kirim email
+        $detailUrl = $this->detailUrl($penawaran->id_penawaran);
+
+        try {
+            // opsi 1: pakai Mailable kamu
+            Mail::to($recipients)->send(new PenawaranSubmittedMail($penawaran, $detailUrl));
+
+            // opsi 2 (debug cepat): kalau mau pastikan SMTP jalan, pakai raw:
+            // Mail::raw("Penawaran {$penawaran->nomor_penawaran} diajukan. Link: {$detailUrl}", function ($m) use ($recipients) {
+            //     $m->to($recipients)->subject('Penawaran Diajukan');
+            // });
+
+        } catch (\Throwable $mailErr) {
+            // rollback status biar konsisten kalau email wajib sukses
+            DB::rollBack();
+
+            \Log::error('AJUKAN PENAWARAN - GAGAL KIRIM EMAIL BM', [
+                'id_penawaran' => $penawaran->id_penawaran,
+                'error'        => $mailErr->getMessage(),
+                'trace'        => $mailErr->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'message' => 'Penawaran gagal diajukan karena email BM gagal dikirim.',
+                'error'   => $mailErr->getMessage(),
+            ], 500);
+        }
+
+        DB::commit();
+
+        return response()->json([
+            'message' => 'Penawaran berhasil diajukan dan email berhasil dikirim ke Branch Manager.',
+        ], 200);
+
+    } catch (\Throwable $e) {
+        DB::rollBack();
+
+        \Log::error('AJUKAN PENAWARAN - ERROR', [
+            'id'    => $id,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+
+        return response()->json([
+            'message' => 'Gagal mengajukan penawaran',
+            'error'   => $e->getMessage(),
+        ], 500);
     }
+}
 
-    /** POST /api/penawarans/{id}/verifikasi-bm */
+
+   
+    // public function verifikasi(Request $request, $id)
+    // {
+    //     $penawaran = Penawaran::with(['customer','cabang'])->findOrFail($id);
+    //     $request->validate(['catatan' => 'nullable|string']);
+
+    //     $penawaran->update([
+    //         'status'              => 'approved_bm',
+    //         'catatan_verifikasi'  => $request->catatan,
+    //         'bm_result'           => '1',
+    //         'bm_tanggal'          => now(),
+    //         'approved_at'         => now(),
+    //         'approved_by'         => $request->user()->name ?? 'BM',
+    //         'disposisi_penawaran' => 3, // next: OM
+    //     ]);
+
+    //     // >>> Kirim email ke semua OM untuk verifikasi <<<
+    //     $omRecipients = $this->getRoleEmails(['CEO', 'CEO', 'CEO']);
+    //     if (!empty($omRecipients)) {
+    //         try {
+    //             $detailUrl = $this->detailUrl($penawaran->id_penawaran);
+    //             Mail::to($omRecipients)->send(new PenawaranNeedOmApprovalMail($penawaran, $detailUrl));
+    //         } catch (\Throwable $e) {
+    //             report($e);
+    //         }
+    //     }
+
+    //     return response()->json(['message' => 'Status penawaran diperbarui']);
+    // }
+
     public function verifikasi(Request $request, $id)
-    {
-        $penawaran = Penawaran::with(['customer','cabang'])->findOrFail($id);
-        $request->validate(['catatan' => 'nullable|string']);
+{
+    $penawaran = Penawaran::with(['customer','cabang'])->findOrFail($id);
+    $request->validate(['catatan' => 'nullable|string']);
 
+    DB::beginTransaction();
+    try {
+        // 1) Update status penawaran
         $penawaran->update([
             'status'              => 'approved_bm',
             'catatan_verifikasi'  => $request->catatan,
@@ -638,22 +830,101 @@ public function destroy($id)
             'bm_tanggal'          => now(),
             'approved_at'         => now(),
             'approved_by'         => $request->user()->name ?? 'BM',
-            'disposisi_penawaran' => 3, // next: OM
+            'disposisi_penawaran' => 3, // next: OM/CEO
         ]);
 
-        // >>> Kirim email ke semua OM untuk verifikasi <<<
-        $omRecipients = $this->getRoleEmails(['CEO', 'CEO', 'CEO']);
-        if (!empty($omRecipients)) {
+        $detailUrl = $this->detailUrl($penawaran->id_penawaran);
+
+        /**
+         * 2) EMAIL KE USER PEMBUAT (penawaran.user_id)
+         */
+        $creatorEmail = null;
+
+        if (!empty($penawaran->user_id)) {
+            $creatorEmail = User::where('id', $penawaran->user_id)
+                ->whereNotNull('email')
+                ->value('email');
+        }
+
+        // fallback kalau user_id kosong: pakai created_by
+        if (!$creatorEmail && !empty($penawaran->created_by)) {
+            $creatorEmail = User::where('name', $penawaran->created_by)
+                ->whereNotNull('email')
+                ->value('email');
+        }
+
+        if ($creatorEmail) {
             try {
-                $detailUrl = $this->detailUrl($penawaran->id_penawaran);
-                Mail::to($omRecipients)->send(new PenawaranNeedOmApprovalMail($penawaran, $detailUrl));
+                // Pakai mailable khusus update status (ideal). Kalau belum ada, sementara bisa pakai raw.
+                Mail::raw(
+                    "Penawaran {$penawaran->nomor_penawaran} sudah disetujui Branch Manager.\nMenunggu approval OM/CEO.\n\nLink: {$detailUrl}",
+                    function ($m) use ($creatorEmail) {
+                        $m->to($creatorEmail)->subject('Update Penawaran: Disetujui BM');
+                    }
+                );
             } catch (\Throwable $e) {
                 report($e);
+                \Log::error('EMAIL CREATOR UPDATE FAILED', [
+                    'id_penawaran' => $penawaran->id_penawaran,
+                    'email' => $creatorEmail,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        } else {
+            \Log::warning('CREATOR EMAIL NOT FOUND', [
+                'id_penawaran' => $penawaran->id_penawaran,
+                'user_id' => $penawaran->user_id,
+                'created_by' => $penawaran->created_by,
+            ]);
+        }
+
+        /**
+         * 3) EMAIL KE OM (id_role = 10) dan CEO (id_role = 2)
+         */
+        $approverRecipients = User::query()
+            ->whereIn('id_role', [10, 2])          // OM=10, CEO=2
+            ->whereNotNull('email')
+            ->pluck('email')
+            ->map(fn($e) => trim((string)$e))
+            ->filter(fn($e) => $e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL))
+            ->unique()
+            ->values()
+            ->all();
+
+        \Log::info('APPROVER RECIPIENTS (OM+CEO)', [
+            'id_penawaran' => $penawaran->id_penawaran,
+            'recipients' => $approverRecipients,
+        ]);
+
+        if (!empty($approverRecipients)) {
+            try {
+                // Kamu bisa pakai mailable existing untuk approval OM:
+                Mail::to($approverRecipients)->send(
+                    new PenawaranNeedOmApprovalMail($penawaran, $detailUrl)
+                );
+            } catch (\Throwable $e) {
+                report($e);
+                \Log::error('EMAIL OM/CEO APPROVAL FAILED', [
+                    'id_penawaran' => $penawaran->id_penawaran,
+                    'recipients' => $approverRecipients,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
 
-        return response()->json(['message' => 'Status penawaran diperbarui']);
+        DB::commit();
+
+        return response()->json(['message' => 'Penawaran disetujui BM & notifikasi terkirim']);
+
+    } catch (\Throwable $e) {
+        DB::rollBack();
+        return response()->json([
+            'message' => 'Gagal verifikasi penawaran',
+            'error'   => $e->getMessage(),
+        ], 500);
     }
+}
+    
 
     /** POST /api/penawarans/{id}/tolak-bm */
     public function tolakbm(Request $request, $id)

@@ -131,14 +131,16 @@
               <label class="text-sm mb-1 block">Transportir</label>
               <FormSelect v-model="oaKapalInput.id_transportir">
                 <option value="">Pilih Transportir</option>
-                <option v-for="t in transportirs" :key="t.id" :value="t.id">{{ t.nama_perusahaan }}</option>
+                <option v-for="t in transportirs" :key="t.id" :value="String(t.id)">
+  {{ t.nama_perusahaan }}
+</option>
               </FormSelect>
             </div>
             <div>
               <label class="text-sm mb-1 block">Wilayah Angkut</label>
               <FormSelect v-model="oaKapalInput.id_angkut_wilayah">
                 <option value="">Pilih Wilayah</option>
-                <option v-for="w in wilayahs" :key="w.id" :value="w.id">
+                <option v-for="w in wilayahs" :key="w.id" :value="String(w.id)">
                   {{ w.provinsi?.nama_provinsi }} - {{ w.kabupaten?.nama_kabupaten }} - {{ w.destinasi }}
                 </option>
               </FormSelect>
@@ -1100,12 +1102,82 @@ other_cost: data.other_cost != null ? String(Number(data.other_cost)) : '',
 
 })
 
+
+    // DEBUG: lihat format ongkos yang dikirim backend
+    console.group('FETCH PENAWARAN - ONGKOS DEBUG');
+    console.log('data.ongkos =', data.ongkos);
+    console.groupEnd();
+
+    // CASE A: kalau backend mengirim object: ongkos.kapal / ongkos.truck
+    if (data.ongkos && !Array.isArray(data.ongkos) && (data.ongkos.kapal || data.ongkos.truck)) {
+
+      if (data.ongkos.kapal) {
+        oaKapalInput.id_transportir = String(data.ongkos.kapal.id_transportir ?? '');
+        oaKapalInput.id_angkut_wilayah = String(data.ongkos.kapal.id_angkut_wilayah ?? '');
+        oaKapalInput.id_volume = String(data.ongkos.kapal.id_volume ?? '');
+        oaKapal.value = Number(data.ongkos.kapal.ongkos ?? 0);
+      } else {
+        oaKapalInput.id_transportir = '';
+        oaKapalInput.id_angkut_wilayah = '';
+        oaKapalInput.id_volume = '';
+        oaKapal.value = 0;
+      }
+
+      if (data.ongkos.truck) {
+        oaTruckInput.id_transportir = String(data.ongkos.truck.id_transportir ?? '');
+        oaTruckInput.id_angkut_wilayah = String(data.ongkos.truck.id_angkut_wilayah ?? '');
+        oaTruckInput.id_volume = String(data.ongkos.truck.id_volume ?? '');
+        oaTruck.value = Number(data.ongkos.truck.ongkos ?? 0);
+      } else {
+        oaTruckInput.id_transportir = '';
+        oaTruckInput.id_angkut_wilayah = '';
+        oaTruckInput.id_volume = '';
+        oaTruck.value = 0;
+      }
+
+      return; // selesai (object-based)
+    }
+
+
+    // CASE B: backend mengirim array relasi (Eloquent default): data.ongkos = []
+    const ongkosList = Array.isArray(data.ongkos) ? data.ongkos : [];
+
+    const kapal = ongkosList.find((o: any) => (o.jenis || '').toUpperCase() === 'KAPAL');
+    const truck = ongkosList.find((o: any) => (o.jenis || '').toUpperCase() === 'TRUCK');
+
+    if (kapal) {
+      // mapping kolom DB -> form input
+      // DB: transportir_id, wilayah_id, volume, ongkos
+      oaKapalInput.id_transportir = String(kapal.transportir_id ?? kapal.id_transportir ?? '');
+      oaKapalInput.id_angkut_wilayah = String(kapal.wilayah_id ?? kapal.id_angkut_wilayah ?? '');
+      oaKapalInput.id_volume = String(kapal.volume ?? kapal.id_volume ?? '');
+      oaKapal.value = Number(kapal.ongkos ?? 0);
+    } else {
+      oaKapalInput.id_transportir = '';
+      oaKapalInput.id_angkut_wilayah = '';
+      oaKapalInput.id_volume = '';
+      oaKapal.value = 0;
+    }
+    if (truck) {
+      oaTruckInput.id_transportir = String(truck.transportir_id ?? truck.id_transportir ?? '');
+      oaTruckInput.id_angkut_wilayah = String(truck.wilayah_id ?? truck.id_angkut_wilayah ?? '');
+      oaTruckInput.id_volume = String(truck.volume ?? truck.id_volume ?? '');
+      oaTruck.value = Number(truck.ongkos ?? 0);
+    } else {
+      oaTruckInput.id_transportir = '';
+      oaTruckInput.id_angkut_wilayah = '';
+      oaTruckInput.id_volume = '';
+      oaTruck.value = 0;
+    }
+
 form.oat = Number(data.oat).toLocaleString('id-ID'),
     form.items = data.items.map((it: any) => ({
       id_produk: it.id_produk,
       volume_order: it.volume_order?.toLocaleString('id-ID') || '',
       harga_tebus: it.harga_tebus?.toLocaleString('id-ID') || '',
-      persen: '',
+      persen: it.persen != null
+    ? String(it.persen)
+    : '',
     }));
   } catch {
     Swal.fire('Error', 'Gagal memuat data penawaran', 'error');
@@ -1120,16 +1192,53 @@ async function submitForm() {
   try {
     const payloadItems = form.items.map((it) => ({
       id_produk: it.id_produk,
+      persen: parseFloat((it.persen || '0').replace(',', '.')) || 0,
       volume_order: parseInt((it.volume_order || '').replace(/\./g, ''), 10) || 0,
       harga_tebus: parseInt((it.harga_tebus || '').replace(/\./g, ''), 10) || 0,
       jumlah_harga: lineTotal(it),
     }));
+
+    const payloadOngkos = []
+
+// ===== ONGKOS KAPAL =====
+if ((form.metode === 'CIF' || form.metode === 'DAP') && oaKapal.value > 0) {
+  payloadOngkos.push({
+    jenis: 'KAPAL',
+    id_transportir: oaKapalInput.id_transportir,
+    id_angkut_wilayah: oaKapalInput.id_angkut_wilayah,
+    id_volume: oaKapalInput.id_volume,
+    ongkos: oaKapal.value,
+  })
+}
+
+// ===== ONGKOS TRUCK =====
+if ((form.metode === 'DAP' || form.metode === 'FOT') && oaTruck.value > 0) {
+  payloadOngkos.push({
+    jenis: 'TRUCK',
+    id_transportir: oaTruckInput.id_transportir,
+    id_angkut_wilayah: oaTruckInput.id_angkut_wilayah,
+    id_volume: oaTruckInput.id_volume,
+    ongkos: oaTruck.value,
+  })
+}
+
+   // DEBUG ONGKOS
+   console.group('DEBUG ONGKOS')
+    console.log('metode:', form.metode)
+    console.log('oaKapal:', oaKapal.value, 'oaTruck:', oaTruck.value)
+    console.log('oaKapalInput:', JSON.parse(JSON.stringify(oaKapalInput)))
+    console.log('oaTruckInput:', JSON.parse(JSON.stringify(oaTruckInput)))
+    console.log('payloadOngkos length:', payloadOngkos.length)
+    console.table(payloadOngkos)
+    console.groupEnd()
+
 
     const payload = {
       id_customer: form.id_customer,
       id_cabang: form.id_cabang,
       masa_berlaku: form.masa_berlaku,
       sampai_dengan: form.sampai_dengan,
+      ongkos: payloadOngkos,
       items: payloadItems,
       tipe_pembayaran: form.tipe_pembayaran,
       order_method: form.order_method,
@@ -1177,6 +1286,11 @@ abrasi: form.abrasi,
       jenis_penawaran: form.jenis_penawaran,
     };
 
+    console.group('DEBUG PAYLOAD FINAL')
+    console.log(payload)
+    console.log('payload.ongkos:', payload.ongkos)
+    console.groupEnd()
+
     if (isEdit) {
       await axios.put(`/api/penawarans/${idParam}`, payload);
       Swal.fire({ icon: 'success', title: 'Penawaran diupdate', toast: true, position: 'top-end', timer: 1500, showConfirmButton: false });
@@ -1186,6 +1300,13 @@ abrasi: form.abrasi,
     }
     goBack();
   } catch (e: any) {
+
+    console.group('SUBMIT ERROR DETAIL')
+    console.log('status:', e.response?.status)
+    console.log('message:', e.response?.data?.message)
+    console.log('data:', e.response?.data)
+    console.groupEnd()
+
     if (e.response?.status === 422 && e.response.data.errors) {
       const msgs = Object.values(e.response.data.errors).flat().join('<br/>');
       Swal.fire({ icon: 'error', title: 'Validasi Backend Gagal', html: msgs });

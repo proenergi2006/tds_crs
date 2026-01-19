@@ -23,7 +23,7 @@
     /* Header */
     .hdr{ width:100%; border-collapse:collapse; margin-bottom:6px }
     .hdr td{ vertical-align:top }
-    .logo img{ height:14mm; width:auto }   /* atur ukuran logo */
+    .logo img{ height:27mm; width:auto }   /* atur ukuran logo */
     .right{ text-align:right; color:#555; font-size:11.5px }
 
     .refrow{ width:100%; border-collapse:collapse; margin-bottom:10px }
@@ -71,25 +71,20 @@
 
     /* Kartu kontak dengan gradasi hijau */
     .contact{
-      border: 1px solid #b7d7b7;       /* hijau muda */
-      border-radius: 10px;
-      padding: 12px 14px;
-      background: #e9f7ef;             /* fallback */
-      background-image: linear-gradient(
-        180deg,                         /* arah vertikal */
-        #e9f7ef 0%,
-        #d7f0da 40%,
-        #c8e6c9 100%
-      );
-      font-size: 11.2px;
-      color: #1b5e20;                   /* teks hijau tua agar kontras */
-      background-clip: padding-box;     /* jaga sudut rounded rapi */
-    }
-    .contact b{
-      display:block;
-      margin-bottom:6px;
-      color:#1b5e20;
-    }
+  border: 1px solid;       /* hijau muda */
+  border-radius: 10px;
+  padding: 12px 14px;
+ 
+  
+  font-size: 11.2px;
+                /* teks hijau tua agar kontras */
+  background-clip: padding-box;     /* jaga sudut rounded rapi */
+}
+.contact b{
+  display:block;
+  margin-bottom:6px;
+  
+}
 
     /* Pita hijau full width, nempel kanan–kiri & bawah */
     .brand-band{
@@ -98,7 +93,7 @@
       right: 0;
       bottom: 0;
       height: 18mm;
-      background: #57955a;
+    
       border: none;
     }
 
@@ -110,7 +105,7 @@
       bottom: 6mm;
       text-align: center;
       font-size: 10.8px;
-      color: #fff;
+   
       padding: 0;
       border: none;
     }
@@ -138,8 +133,17 @@
               $uk->nama_ukuran ?? null,
               $st->nama_satuan ?? null,
           ])));
+
+          // persen (fallback 0)
+        $persen = $it->persen !== null
+            ? rtrim(rtrim(number_format($it->persen, 2, '.', ''), '0'), '.') // buang .00
+            : '0';
           // "Nama Produk — 2-3 m³" atau hanya "Nama Produk" jika ukuran kosong
-          return trim($p->nama_produk . ($ukTxt ? ' — '.$ukTxt : ''));
+          return trim(
+            $p->nama_produk
+            . ($ukTxt ? ' — ' . $ukTxt : '')
+            . ' (' . $persen . '%)'
+        );
       })
       ->filter()
       ->unique()
@@ -314,7 +318,7 @@
         </div>
       
         <br>
-        <strong>Vica Krisdianatha</strong><br>
+        <strong><u>Vica Krisdianatha</u></strong><br>
         Operation Manager
       </td>
       <td style="width:45%;">
@@ -333,7 +337,8 @@
 <!-- Pita & footer -->
 <div class="brand-band"></div>
 <div class="footer">
-  PT. Tri Daya Selaras • Graha Irama Building Lantai 6 Unit G, Jl. HR Rasuna Said Blok X1 Kav 1-2 •
+  <hr style="border: none; border-top: 1px solid #000;">
+  <strong >PT. Tri Daya Selaras, </strong> • Graha Irama Building 6th floor unit G, Jln. HR Rasuna Said Blok X1 Kav 1-2 •
   Telp. +021 5289 2321 • Fax +021 5289 2310 • www.tridayaselaras.com
 </div>
 

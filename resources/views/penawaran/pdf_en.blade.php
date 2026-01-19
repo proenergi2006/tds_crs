@@ -23,7 +23,7 @@
     /* Header */
     .hdr{ width:100%; border-collapse:collapse; margin-bottom:6px }
     .hdr td{ vertical-align:top }
-    .logo img{ height:14mm; width:auto }   /* atur ukuran logo */
+    .logo img{ height:27mm; width:auto }   /* atur ukuran logo */
     .right{ text-align:right; color:#555; font-size:11.5px }
 
     .refrow{ width:100%; border-collapse:collapse; margin-bottom:10px }
@@ -70,24 +70,19 @@
     .sp-sign{ height:52px }
     /* Kartu kontak dengan gradasi hijau */
 .contact{
-  border: 1px solid #b7d7b7;       /* hijau muda */
+  border: 1px solid;       /* hijau muda */
   border-radius: 10px;
   padding: 12px 14px;
-  background: #e9f7ef;             /* fallback */
-  background-image: linear-gradient(
-    180deg,                         /* arah vertikal */
-    #e9f7ef 0%,
-    #d7f0da 40%,
-    #c8e6c9 100%
-  );
+ 
+  
   font-size: 11.2px;
-  color: #1b5e20;                   /* teks hijau tua agar kontras */
+                /* teks hijau tua agar kontras */
   background-clip: padding-box;     /* jaga sudut rounded rapi */
 }
 .contact b{
   display:block;
   margin-bottom:6px;
-  color:#1b5e20;
+  
 }
 
     /* ====== Footer teks di atas pita hijau ====== */
@@ -102,7 +97,7 @@
   right: 0;
   bottom: 0;
   height: 18mm;
-  background: #57955a;          /* boleh nanti diganti gradient */
+         /* boleh nanti diganti gradient */
   border: none;
 }
 
@@ -114,7 +109,6 @@
   bottom: 6mm;                  /* jarak dari tepi bawah kertas */
   text-align: center;
   font-size: 10.8px;
-  color: #fff;
   padding: 0;
   border: none;
 }
@@ -143,8 +137,17 @@
               $uk->nama_ukuran ?? null,
               $st->nama_satuan ?? null,
           ])));
+
+          // persen (fallback 0)
+        $persen = $it->persen !== null
+            ? rtrim(rtrim(number_format($it->persen, 2, '.', ''), '0'), '.') // buang .00
+            : '0';
           // "Nama Produk — 2-3 m³" atau hanya "Nama Produk" jika ukuran kosong
-          return trim($p->nama_produk . ($ukTxt ? ' — '.$ukTxt : ''));
+          return trim(
+            $p->nama_produk
+            . ($ukTxt ? ' — ' . $ukTxt : '')
+            . ' (' . $persen . '%)'
+        );
       })
       ->filter()
       ->unique()
@@ -189,7 +192,14 @@ Sides.  &mdash; Once get QC clearance, barge will depart to Discharge Port';
         No. Ref {{ $penawaran->nomor_penawaran }}
       </td>
       <td class="refright" style="width:40%">
-        Telp. {{ $penawaran->telepon ?? '-' }}
+        Telp.
+        {{
+          $penawaran->telepon
+            ? (str_starts_with($penawaran->telepon, '0')
+                ? '+62' . substr($penawaran->telepon, 1)
+                : $penawaran->telepon)
+            : '-'
+        }}
       </td>
     </tr>
   </table>
@@ -199,8 +209,8 @@ Sides.  &mdash; Once get QC clearance, barge will depart to Discharge Port';
     <tr>
       <td style="width:100%">
         <div class="attn">
-          <strong>Attention to :</strong><br>
-          PT {{ $cust->nama_perusahaan ?? '-' }}<br>
+          Attention to :<br>
+          <strong>{{ $cust->nama_perusahaan ?? '-' }}</strong><br>
           {{ $cust->alamat_perusahaan ?? 'Alamat belum diisi' }}<br><br>
 
           <strong>UP. <u>{{ $penawaran->nama ?? '-' }}</u></strong><br>
@@ -216,8 +226,9 @@ Sides.  &mdash; Once get QC clearance, barge will depart to Discharge Port';
   <!-- Intro -->
   <p class="p">Dear Sir,</p>
   <p class="p">
-    Together with this letter, please allow us introduce that we are from PT Tri Daya Selaras (An Affiliated company of PT Pro Energi) as a Legal Entity and have a Sales
-    Transportation Mining Business License from ESDM, which is engaged in Mining.
+    Together with this letter, please allow us introduce that we are from PT Tri Daya Selaras (an affiliated company of
+    PT Pro Energi) as a Legal Entity and have a Sales Transportation Mining Business License from ESDM, which is
+    engaged in Mining.
   </p>
   <p class="p">
     With our experience, product assurance and resource, and facilities, we believe we are able to fulfill the needs of
@@ -242,25 +253,35 @@ Sides.  &mdash; Once get QC clearance, barge will depart to Discharge Port';
       </tr>
       <tr>
         <td class="no">4.</td><td class="label"><b>Payment Method</b></td><td class="colon">:</td>
-        <td class="value"><b>{{ $penawaran->termin_pembayaran ?? $defaultPayment }}</b></td>
+        <td class="value">
+      
+          @if($penawaran->tipe_pembayaran === 'CUSTOM')
+            <div style="margin-top:4px">
+
+              DP {{ number_format($penawaran->dp_persen, 0) }}%
+              Repayment {{ number_format($penawaran->repayment_persen, 0) }}%
+              after {{ number_format($penawaran->repayment_hari, 0) }} days
+            </div>
+          @else
+            <div style="margin-top:4px">
+              <b>{{ $penawaran->tipe_pembayaran }}</b>
+            </div>
+          @endif
+      
+        </td>
       </tr>
       <tr>
         <td class="no">5.</td><td class="label"><b>Ordering Method</b></td><td class="colon">:</td>
-        <td class="value">{{ $penawaran->order_method ?? $defaultOrder }}</td>
-      </tr>
+        <td class="value">{{ $penawaran->order_method}}</td>
       <tr>
         <td class="no">6.</td><td class="label"><b>Delivery Method</b></td><td class="colon">:</td>
         <td class="value">
-          @if(($penawaran->keterangan ?? null) && strtoupper($penawaran->keterangan) !== 'FOB')
-            {{ strtoupper($penawaran->keterangan) }}
-          @else
-            {{ $defaultShipping }}
-          @endif
+          {{ $penawaran->metode}}
         </td>
       </tr>
       <tr>
         <td class="no">7.</td><td class="label"><b>Receiving Point & QC</b></td><td class="colon">:</td>
-        <td class="value">{!! $penawaran->receiving_point ?? $defaultQC !!}</td>
+        <td class="value">{!! $penawaran->keterangan !!}</td>
       </tr>
     
       <tr>
@@ -268,7 +289,7 @@ Sides.  &mdash; Once get QC clearance, barge will depart to Discharge Port';
         <td class="value">{{ $penawaran->toleransi_penyusutan ?? $defaultTolerance }} %</td>
       </tr>
       <tr>
-        <td class="no">9.</td><td class="label"><b>Price due to</b></td><td class="colon">:</td>
+        <td class="no">9.</td><td class="label"><b>Price & Terms due to</b></td><td class="colon">:</td>
         <td class="value">
           {{ \Carbon\Carbon::parse($penawaran->masa_berlaku)->translatedFormat('d F Y') }}
           -
@@ -306,7 +327,7 @@ Sides.  &mdash; Once get QC clearance, barge will depart to Discharge Port';
         </div>
       
         <br>
-        <strong>Vica Krisdianatha</strong><br>
+        <strong><u>Vica Krisdianatha</u></strong><br>
         Operation Manager
       </td>
       <td style="width:45%;">
@@ -326,7 +347,8 @@ Sides.  &mdash; Once get QC clearance, barge will depart to Discharge Port';
 </div>
 <div class="brand-band"></div>
 <div class="footer">
-  PT. Tri Daya Selaras • Graha Irama Building 6th floor unit G, Jln. HR Rasuna Said Blok X1 Kav 1-2 •
+  <hr style="border: none; border-top: 1px solid #000;">
+  <strong >PT. Tri Daya Selaras, </strong> • Graha Irama Building 6th floor unit G, Jln. HR Rasuna Said Blok X1 Kav 1-2 •
   Telp. +021 5289 2321 • Fax +021 5289 2310 • www.tridayaselaras.com
 </div>
 

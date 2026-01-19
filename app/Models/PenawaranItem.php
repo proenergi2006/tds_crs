@@ -13,6 +13,7 @@ class PenawaranItem extends Model
     protected $fillable = [
         'id_penawaran',
         'id_produk',
+        'persen',
         'volume_order',
         'harga_tebus',
         'jumlah_harga',
